@@ -1,0 +1,6 @@
+@Bingora.Api_HostAddress = http://localhost:5138
+
+GET {{Bingora.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

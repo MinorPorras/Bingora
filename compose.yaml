@@ -1,0 +1,26 @@
+﻿services:
+  bingora-db:
+    image: postgres:15-alpine
+    container_name: bingora_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: BingoraDb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: minorp200304.
+    ports:
+      - "5432:5432"
+    volumes:
+      - bingora_data:/var/lib/postgresql/data
+    networks:
+      bingora_network:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d BingoraDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  bingora_data:
+    
+networks:
+  bingora_network:
