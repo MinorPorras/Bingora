@@ -63,4 +63,57 @@ Este proyecto no es solo un CRUD; está construido con un enfoque en la mantenib
 Sigue estos pasos para levantar el proyecto en tu máquina.
 
 ### Prerrequisitos
-- [.NET 10 SDK](https://dotnet.microsoft.com/download
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Node.js](https://nodejs.org/) (v18+) y `pnpm` (`npm install -g pnpm`)
+- [Docker](https://www.docker.com/) y Docker Compose
+
+### 1. Clonar el repositorio
+```bash
+git clone git@github.com:tu-usuario/bingora.git
+cd bingora
+```
+
+### 2. Configurar Variables de Entorno
+Copia el archivo de ejemplo y ajusta las variables si es necesario (especialmente las cadenas de conexión y claves JWT).
+```bash
+cp src/Bingora.Api/.env.example src/Bingora.Api/.env
+```
+(Nota: Nunca subas archivos .env reales al repositorio).
+
+### 3. Levantar la Infraestructura (Base de Datos)
+```bash
+docker compose up -d
+```
+Esto iniciará un contenedor de PostgreSQL en el puerto 5432.
+
+### 4. Ejecutar Migraciones y Backend
+```bash
+cd src/Bingora.Api
+dotnet ef database update
+dotnet run
+```
+La API estará disponible en https://localhost:5001 (o el puerto configurado). La documentación interactiva de la API se encuentra en /scalar.
+
+### 5. Ejecutar el Frontend
+Abre una nueva terminal:
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+La aplicación web estará disponible en http://localhost:5173.
+
+## 🗺️ Roadmap
+- Configuración de Clean Architecture y Docker.
+- Modelo de Dominio y Base de Datos (PostgreSQL + Esquemas).
+- Autenticación (JWT, BCrypt, Result Pattern).
+- Generación de cartones con algoritmo de columnas y QR.
+- Lógica de Partidas y Detección de Ganadores (Bitmasking).
+- Integración de SignalR para tiempo real.
+- Pruebas Unitarias y de Integración (xUnit + Testcontainers).
+
+## 🤝 Contribuciones
+Aunque este es un proyecto personal de portafolio, las sugerencias, reportes de bugs o ideas de mejora son bienvenidos. Por favor, abre un Issue o un Pull Request siguiendo las buenas prácticas de Git.
+
+💡 Desarrollado con ❤️ y mucho ☕ por [MinorPorras]
+> [LinkedIn](https://www.linkedin.com/in/minor-porras/) | [Portafolio](https://minorporras.vercel.app)
