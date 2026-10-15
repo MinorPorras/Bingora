@@ -13,5 +13,5 @@ public interface IAuthService
     Task<Result<AuthResponseDto>> RefreshTokenAsync(string refreshToken,
         CancellationToken ct = default(CancellationToken));
 
-    Task<Result<AuthResponseDto>> LogoutAsync(string refreshToken, CancellationToken ct = default(CancellationToken));
+    Task<Result> LogoutAsync(string refreshToken, CancellationToken ct = default(CancellationToken));
 }

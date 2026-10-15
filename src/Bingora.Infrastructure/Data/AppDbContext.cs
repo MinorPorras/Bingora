@@ -1,15 +1,11 @@
 ﻿using Bingora.Domain.Entities;
-using Bingora.Infraestructure.Configurations;
+using Bingora.Infrastructure.Configurations;
 using Microsoft.EntityFrameworkCore;
 
-namespace Bingora.Infraestructure.Data;
+namespace Bingora.Infrastructure.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-    {
-    }
-
     // DbSets de las tablas
     public DbSet<User> Users { get; set; }
 

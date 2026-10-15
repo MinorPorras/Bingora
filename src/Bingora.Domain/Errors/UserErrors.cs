@@ -12,4 +12,7 @@ public static class UserErrors
 
     public static readonly Error EmailAlreadyExists = new("User.EmailAlreadyExists",
         "Ya existe una cuenta registrada con este correo electrónico");
+
+    public static readonly Error InvalidOrExpiredRefreshToken = new("User.InvalidOrExpiredRefreshToken",
+        "El token de actualización es inválido o ha expirado");
 }

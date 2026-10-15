@@ -8,13 +8,17 @@ public class Result
 
     protected Result(bool isSuccess, Error? error)
     {
-        if (isSuccess && error != null)
-            throw new InvalidOperationException("Un resultado exitoso no puede devolver ningún error");
-        if (IsFailure && error == null)
-            throw new InvalidOperationException("Un resultado fallido debe de incluir un error que lo describa");
-
-        IsSuccess = isSuccess;
-        Error = error;
+        switch (isSuccess)
+        {
+            case true when error != null:
+                throw new InvalidOperationException("Un resultado exitoso no puede devolver ningún error");
+            case false when error == null:
+                throw new InvalidOperationException("Un resultado fallido debe de incluir un error que lo describa");
+            default:
+                IsSuccess = isSuccess;
+                Error = error;
+                break;
+        }
     }
 
     public static Result Success() => new(true, null);

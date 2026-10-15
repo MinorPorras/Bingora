@@ -7,35 +7,28 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Bingora.Application.Services;
 
-public class AuthService : IAuthService
+public class AuthService(IUserRepository repository, IJwtTokenGenerator jwtTokenGenerator)
+    : IAuthService
 {
-    private readonly IUserRepository _repository;
-    private readonly IJwtTokenGenerator _jwtTokenGenerator;
-
-    public AuthService(IUserRepository repository, IJwtTokenGenerator jwtTokenGenerator)
-    {
-        _repository = repository;
-        _jwtTokenGenerator = jwtTokenGenerator;
-    }
-
     public async Task<Result<AuthResponseDto>> RegisterAsync(RegisterRequestDto dto,
         CancellationToken ct = default(CancellationToken))
     {
-        var existingUser = await _repository.GetByEmailAsync(dto.Email, ct);
+        var existingUser = await repository.GetByEmailAsync(dto.Email, ct);
         if (existingUser is not null) return Result<AuthResponseDto>.Failure(UserErrors.EmailAlreadyExists);
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-
         var newUser = new User(
             username: dto.Username,
             email: dto.Email,
             passwordHash: passwordHash
         );
 
-        await _repository.AddAsync(newUser, ct);
+        await repository.AddAsync(newUser, ct);
 
         var (accessToken, accessTokenExpiration, refreshToken, refreshTokenExpiration) =
-            _jwtTokenGenerator.GenerateToken(newUser);
+            jwtTokenGenerator.GenerateToken(newUser);
+        newUser.UpdateRefreshToken(refreshToken, refreshTokenExpiration);
+        await repository.UpdateAsync(newUser, ct);
 
         return Result<AuthResponseDto>.Success(
             new AuthResponseDto(
@@ -53,13 +46,15 @@ public class AuthService : IAuthService
     public async Task<Result<AuthResponseDto>> LoginAsync(LoginRequestDto dto,
         CancellationToken ct = default(CancellationToken))
     {
-        var user = await _repository.GetByEmailAsync(dto.Email, ct);
-        if (user is null || BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        var user = await repository.GetByEmailAsync(dto.Email, ct);
+        if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidCredentials);
-        
+
         var (accessToken, accessTokenExpiration, refreshToken, refreshTokenExpiration) =
-            _jwtTokenGenerator.GenerateToken(user);
-        
+            jwtTokenGenerator.GenerateToken(user);
+        user.UpdateRefreshToken(refreshToken, refreshTokenExpiration);
+        await repository.UpdateAsync(user, ct);
+
         return Result<AuthResponseDto>.Success(
             new AuthResponseDto(
                 user.Id,
@@ -73,15 +68,34 @@ public class AuthService : IAuthService
         );
     }
 
-    public Task<Result<AuthResponseDto>> RefreshTokenAsync(string refreshToken,
+    public async Task<Result<AuthResponseDto>> RefreshTokenAsync(string refreshToken,
         CancellationToken ct = default(CancellationToken))
     {
-        throw new NotImplementedException();
+        var user = await repository.GetByRefreshTokenAsync(refreshToken, ct);
+        if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiration < DateTime.UtcNow)
+            return Result<AuthResponseDto>.Failure(UserErrors.InvalidOrExpiredRefreshToken);
+        var (newAccessToken, newAccessExp, newRefreshToken, newRefreshExp) = jwtTokenGenerator.GenerateToken(user);
+        user.UpdateRefreshToken(newRefreshToken, newRefreshExp);
+        await repository.UpdateAsync(user, ct);
+
+        return Result<AuthResponseDto>.Success(new AuthResponseDto(
+            user.Id, 
+            user.Username, 
+            user.Email, 
+            newAccessToken, 
+            newAccessExp, 
+            newRefreshToken, 
+            newRefreshExp));
     }
 
-    public Task<Result<AuthResponseDto>> LogoutAsync(string refreshToken,
+    public async Task<Result> LogoutAsync(string refreshToken,
         CancellationToken ct = default(CancellationToken))
     {
-        throw new NotImplementedException();
+        var user = await repository.GetByRefreshTokenAsync(refreshToken, ct);
+        if (user is null) return Result.Success();
+        
+        user.RevokeRefreshToken();
+        await repository.UpdateAsync(user, ct);
+        return Result.Success();
     }
 }

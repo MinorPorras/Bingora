@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Bingora.Infraestructure.Migrations
+namespace Bingora.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

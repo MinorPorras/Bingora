@@ -1,5 +1,9 @@
+using Bingora.Api.Endpoints;
 using Bingora.Application.Interfaces;
-using Bingora.Infraestructure.Data;
+using Bingora.Application.Services;
+using Bingora.Infrastructure.Data;
+using Bingora.Infrastructure.Repositories;
+using Bingora.Infrastructure.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,9 +11,16 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+//Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+//Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+//Repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 //Validators
 builder.Services.AddValidatorsFromAssemblyContaining<IAuthService>();
@@ -20,7 +31,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.InvalidModelStateResponseFactory = context =>
     {
         var errors = context.ModelState
-            .Where(e => e.Value.Errors.Count > 0)
+            .Where(e => e.Value?.Errors.Count > 0)
             .SelectMany(e => e.Value.Errors.Select(x => x.ErrorMessage))
             .ToArray();
 
@@ -49,5 +60,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.MapAuthEndpoints();
 
 app.Run();

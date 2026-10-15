@@ -7,7 +7,7 @@ using Bingora.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Bingora.Infraestructure.Services;
+namespace Bingora.Infrastructure.Services;
 
 public class JwtTokenGenerator : IJwtTokenGenerator
 {

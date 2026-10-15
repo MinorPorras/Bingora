@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bingora.Application", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bingora.Domain", "src\Bingora.Domain\Bingora.Domain.csproj", "{56FF9D02-9C3A-425B-B8BA-49C118D8BB65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bingora.Infraestructure", "src\Bingora.Infraestructure\Bingora.Infraestructure.csproj", "{40CFE008-9490-4205-90AC-79269BCFDBC1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bingora.Infrastructure", "src\Bingora.Infrastructure\Bingora.Infrastructure.csproj", "{40CFE008-9490-4205-90AC-79269BCFDBC1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F21F5CAC-6F6F-415F-9147-81BCD6E25DED}"
 	ProjectSection(SolutionItems) = preProject
