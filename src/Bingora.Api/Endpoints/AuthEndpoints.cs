@@ -33,8 +33,8 @@ public static class AuthEndpoints
                         });
                 }
             )
-            .WithName("RegisterUser")
-            .WithSummary("Registra un nuevo usuario administrador")
+            .WithSummary("RegisterUser")
+            .WithDescription("Registra un nuevo usuario administrador")
             .Produces<AuthResponseDto>(201)
             .ProducesProblem(400);
 
@@ -58,8 +58,8 @@ public static class AuthEndpoints
                             Status = 401
                         }, statusCode: 401);
                 })
-            .WithName("Login")
-            .WithSummary(
+            .WithSummary("Login")
+            .WithDescription(
                 "Permite que un usuario administrador inicie sesión con sus credenciales y obtiene los tokens JWT")
             .Produces<AuthResponseDto>(200)
             .ProducesProblem(401);
@@ -79,8 +79,8 @@ public static class AuthEndpoints
                             Status = 401
                         }, statusCode: 401);
                 })
-            .WithName("Refresh")
-            .WithSummary("Permite la regeneración del refresh token del usuario y rota sus tokens")
+            .WithSummary("Refresh")
+            .WithDescription("Permite la regeneración del refresh token del usuario y rota sus tokens")
             .Produces(200)
             .ProducesProblem(400);
 
@@ -96,8 +96,8 @@ public static class AuthEndpoints
                             Detail = result.Error?.Message,
                         });
                 })
-            .WithName("Logout")
-            .WithSummary("Permite que un usuario administrador pueda cerrar sesión y elimina su refresh token")
+            .WithSummary("Logout")
+            .WithDescription("Permite que un usuario administrador pueda cerrar sesión y elimina su refresh token")
             .Produces(200)
             .ProducesProblem(400);
     }

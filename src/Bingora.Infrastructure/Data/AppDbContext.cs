@@ -8,12 +8,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     // DbSets de las tablas
     public DbSet<User> Users { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
         // Configuraciones personalizadas de cada entidad
-        builder.ApplyConfiguration(new UserConfiguration());
+        builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }

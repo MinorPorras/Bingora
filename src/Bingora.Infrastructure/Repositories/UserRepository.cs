@@ -13,13 +13,9 @@ public class UserRepository(AppDbContext context) : IUserRepository
     public async Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default(CancellationToken)) =>
         await context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == username, ct);
 
-    public async Task<User?> GetByRefreshTokenAsync(string refreshToken,
-        CancellationToken ct = default(CancellationToken)) =>
-        await context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken, ct);
-
     public async Task AddAsync(User newUser, CancellationToken ct = default(CancellationToken))
     {
-        context.Users.Add(newUser);
+        await context.Users.AddAsync(newUser, ct);
         await context.SaveChangesAsync(ct);
     }
 

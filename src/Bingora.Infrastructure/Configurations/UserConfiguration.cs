@@ -19,8 +19,5 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email).IsUnique();
         
         builder.Property(u => u.PasswordHash).IsRequired();
-
-        builder.Property(u => u.RefreshToken).HasMaxLength(500);
-        builder.Property(u => u.RefreshTokenExpiration);
     }
 }

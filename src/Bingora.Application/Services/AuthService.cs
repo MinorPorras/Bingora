@@ -3,17 +3,22 @@ using Bingora.Application.Interfaces;
 using Bingora.Domain.Common;
 using Bingora.Domain.Entities;
 using Bingora.Domain.Errors;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32.SafeHandles;
 
 namespace Bingora.Application.Services;
 
-public class AuthService(IUserRepository repository, IJwtTokenGenerator jwtTokenGenerator)
+public class AuthService(
+    IUserRepository userRepository,
+    IRefreshTokenRepository refreshTokenRepository,
+    IJwtTokenGenerator jwtTokenGenerator,
+    ILogger<AuthService> logger)
     : IAuthService
 {
     public async Task<Result<AuthResponseDto>> RegisterAsync(RegisterRequestDto dto,
         CancellationToken ct = default(CancellationToken))
     {
-        var existingUser = await repository.GetByEmailAsync(dto.Email, ct);
+        var existingUser = await userRepository.GetByEmailAsync(dto.Email, ct);
         if (existingUser is not null) return Result<AuthResponseDto>.Failure(UserErrors.EmailAlreadyExists);
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
@@ -23,12 +28,12 @@ public class AuthService(IUserRepository repository, IJwtTokenGenerator jwtToken
             passwordHash: passwordHash
         );
 
-        await repository.AddAsync(newUser, ct);
+        await userRepository.AddAsync(newUser, ct);
 
-        var (accessToken, accessTokenExpiration, refreshToken, refreshTokenExpiration) =
+        var (accessToken, accessTokenExpiration, refreshTokenString, refreshTokenExpiration) =
             jwtTokenGenerator.GenerateToken(newUser);
-        newUser.UpdateRefreshToken(refreshToken, refreshTokenExpiration);
-        await repository.UpdateAsync(newUser, ct);
+        var newRefreshToken = new RefreshToken(refreshTokenString, newUser.Id, refreshTokenExpiration);
+        await refreshTokenRepository.AddAsync(newRefreshToken, ct);
 
         return Result<AuthResponseDto>.Success(
             new AuthResponseDto(
@@ -37,7 +42,7 @@ public class AuthService(IUserRepository repository, IJwtTokenGenerator jwtToken
                 newUser.Email,
                 accessToken,
                 accessTokenExpiration,
-                refreshToken,
+                refreshTokenString,
                 refreshTokenExpiration
             )
         );
@@ -46,14 +51,14 @@ public class AuthService(IUserRepository repository, IJwtTokenGenerator jwtToken
     public async Task<Result<AuthResponseDto>> LoginAsync(LoginRequestDto dto,
         CancellationToken ct = default(CancellationToken))
     {
-        var user = await repository.GetByEmailAsync(dto.Email, ct);
+        var user = await userRepository.GetByEmailAsync(dto.Email, ct);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidCredentials);
 
-        var (accessToken, accessTokenExpiration, refreshToken, refreshTokenExpiration) =
+        var (accessToken, accessTokenExpiration, refreshTokenString, refreshTokenExpiration) =
             jwtTokenGenerator.GenerateToken(user);
-        user.UpdateRefreshToken(refreshToken, refreshTokenExpiration);
-        await repository.UpdateAsync(user, ct);
+        var newRefreshToken = new RefreshToken(refreshTokenString, user.Id, refreshTokenExpiration);
+        await refreshTokenRepository.AddAsync(newRefreshToken, ct);
 
         return Result<AuthResponseDto>.Success(
             new AuthResponseDto(
@@ -62,7 +67,7 @@ public class AuthService(IUserRepository repository, IJwtTokenGenerator jwtToken
                 user.Email,
                 accessToken,
                 accessTokenExpiration,
-                refreshToken,
+                refreshTokenString,
                 refreshTokenExpiration
             )
         );
@@ -71,31 +76,54 @@ public class AuthService(IUserRepository repository, IJwtTokenGenerator jwtToken
     public async Task<Result<AuthResponseDto>> RefreshTokenAsync(string refreshToken,
         CancellationToken ct = default(CancellationToken))
     {
-        var user = await repository.GetByRefreshTokenAsync(refreshToken, ct);
-        if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiration < DateTime.UtcNow)
+        var storedToken = await refreshTokenRepository.GetByTokenAsync(refreshToken, ct);
+        if (storedToken is not { RevokedAt: null })
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidOrExpiredRefreshToken);
-        var (newAccessToken, newAccessExp, newRefreshToken, newRefreshExp) = jwtTokenGenerator.GenerateToken(user);
-        user.UpdateRefreshToken(newRefreshToken, newRefreshExp);
-        await repository.UpdateAsync(user, ct);
+
+        if (storedToken.ExpiresAt < DateTime.UtcNow)
+        {
+            storedToken.Revoke(DateTime.UtcNow);
+            await refreshTokenRepository.UpdateAsync(storedToken, ct);
+            return Result<AuthResponseDto>.Failure(UserErrors.InvalidOrExpiredRefreshToken);
+        }
+
+        if (storedToken.ReplacedByTokenId.HasValue)
+        {
+            logger.LogWarning("ANOMALÍA DETECTADA: Reuso del refresh token del usuario {userId}.", storedToken.UserId);
+            var allUserTokens = await refreshTokenRepository.GetActiveByUserIdAsync(storedToken.UserId, ct);
+            foreach (var userToken in allUserTokens)
+            {
+                userToken.Revoke(DateTime.UtcNow);
+                await refreshTokenRepository.UpdateAsync(userToken, ct);
+            }
+
+            return Result<AuthResponseDto>.Failure(UserErrors.InvalidOrExpiredRefreshToken);
+        }
+
+        var user = storedToken.User;
+        var (newAccessToken, accessTokenExpiration, refreshTokenString, refreshTokenExpiration) =
+            jwtTokenGenerator.GenerateToken(user);
+
+        var newRefreshToken = new RefreshToken(refreshTokenString, user.Id, refreshTokenExpiration);
+        storedToken.ReplaceWith(newRefreshToken.Id);
+
+        await refreshTokenRepository.UpdateAsync(storedToken, ct);
+        await refreshTokenRepository.AddAsync(newRefreshToken, ct);
 
         return Result<AuthResponseDto>.Success(new AuthResponseDto(
-            user.Id, 
-            user.Username, 
-            user.Email, 
-            newAccessToken, 
-            newAccessExp, 
-            newRefreshToken, 
-            newRefreshExp));
+            user.Id, user.Username, user.Email, newAccessToken, accessTokenExpiration, refreshTokenString,
+            refreshTokenExpiration));
     }
 
     public async Task<Result> LogoutAsync(string refreshToken,
         CancellationToken ct = default(CancellationToken))
     {
-        var user = await repository.GetByRefreshTokenAsync(refreshToken, ct);
-        if (user is null) return Result.Success();
-        
-        user.RevokeRefreshToken();
-        await repository.UpdateAsync(user, ct);
+        var storedToken = await refreshTokenRepository.GetByTokenAsync(refreshToken, ct);
+        if (storedToken is null) return Result.Success();
+
+        storedToken.Revoke(DateTime.UtcNow);
+        await refreshTokenRepository.UpdateAsync(storedToken, ct);
+
         return Result.Success();
     }
 }
