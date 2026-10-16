@@ -36,7 +36,10 @@ public static class AuthEndpoints
             .WithSummary("RegisterUser")
             .WithDescription("Registra un nuevo usuario administrador")
             .Produces<AuthResponseDto>(201)
-            .ProducesProblem(400);
+            .ProducesProblem(400)
+            .AllowAnonymous()
+            .RequireRateLimiting("AuthPolicy");
+
 
         group.MapPost("/login",
                 async (LoginRequestDto dto,
@@ -62,7 +65,9 @@ public static class AuthEndpoints
             .WithDescription(
                 "Permite que un usuario administrador inicie sesión con sus credenciales y obtiene los tokens JWT")
             .Produces<AuthResponseDto>(200)
-            .ProducesProblem(401);
+            .ProducesProblem(401)
+            .AllowAnonymous()
+            .RequireRateLimiting("AuthPolicy");
 
         group.MapPost("/refresh",
                 async (RefreshTokenRequestDto dto,
@@ -82,7 +87,8 @@ public static class AuthEndpoints
             .WithSummary("Refresh")
             .WithDescription("Permite la regeneración del refresh token del usuario y rota sus tokens")
             .Produces(200)
-            .ProducesProblem(400);
+            .ProducesProblem(400)
+            .RequireRateLimiting("GeneralPolicy");
 
         group.MapPost("/logout",
                 async (RefreshTokenRequestDto dto, IAuthService service, CancellationToken ct) =>
@@ -99,6 +105,7 @@ public static class AuthEndpoints
             .WithSummary("Logout")
             .WithDescription("Permite que un usuario administrador pueda cerrar sesión y elimina su refresh token")
             .Produces(200)
-            .ProducesProblem(400);
+            .ProducesProblem(400)
+            .RequireRateLimiting("GeneralPolicy");
     }
 }
