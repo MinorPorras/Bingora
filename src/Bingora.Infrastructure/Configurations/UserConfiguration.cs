@@ -9,7 +9,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.ToTable("user", "bingo");
-        
+
         builder.HasKey(x => x.Id);
 
         builder.Property(u => u.Username).HasMaxLength(50).IsRequired();
@@ -17,7 +17,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => u.Username).IsUnique();
         builder.HasIndex(u => u.Email).IsUnique();
-        
+
         builder.Property(u => u.PasswordHash).IsRequired();
+        builder.Property(u => u.IsActive);
+        builder.Property(u => u.Role);
     }
 }

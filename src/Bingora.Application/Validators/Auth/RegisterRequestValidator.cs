@@ -19,6 +19,9 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequestDto>
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("La contraseña es obligatoria.")
-            .MinimumLength(8).WithMessage("La contraseña debe de contener el menos 8 caracteres.");
+            .MinimumLength(8).WithMessage("La contraseña debe de contener el menos 8 caracteres.")
+            .Matches("[A-Z]").WithMessage("Debe de contener al menos una mayúscula.")
+            .Matches("[0-9]").WithMessage("Debe de contener al menos un número.")
+            .Matches("[^a-zA-Z0-9]").WithMessage("Debe de contener al menos un caracter especial.");
     }
 }

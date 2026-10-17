@@ -87,6 +87,7 @@ builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 //Validators
 builder.Services.AddValidatorsFromAssemblyContaining<IAuthService>();
+builder.Services.AddValidatorsFromAssemblyContaining<IUserRepository>();
 
 //Estandarización de errores con Problem Details RFC-7807
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -129,6 +130,7 @@ app.UseAuthorization();
 
 // Mapeo de endpoints
 app.MapAuthEndpoints();
+app.MapUserManagementEndpoints();
 
 
 app.Run();

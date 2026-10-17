@@ -15,4 +15,6 @@ public static class UserErrors
 
     public static readonly Error InvalidOrExpiredRefreshToken = new("User.InvalidOrExpiredRefreshToken",
         "El token de actualización es inválido o ha expirado");
+
+    public static readonly Error InactiveUser = new("User.Inactive", "El usuario que se intenta usar está inactivo");
 }

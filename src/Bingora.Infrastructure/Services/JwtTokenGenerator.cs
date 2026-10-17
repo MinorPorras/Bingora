@@ -32,7 +32,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Name, user.Username),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.Role, "Admin")
+            new Claim(ClaimTypes.Role, user.Role.ToString()),
         };
 
         var accessTokenExpiration = DateTime.UtcNow.AddMinutes(expirationInMinutes);

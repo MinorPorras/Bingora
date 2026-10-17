@@ -2,9 +2,9 @@
 using Bingora.Application.Interfaces;
 using Bingora.Domain.Common;
 using Bingora.Domain.Entities;
+using Bingora.Domain.Enums;
 using Bingora.Domain.Errors;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32.SafeHandles;
 
 namespace Bingora.Application.Services;
 
@@ -25,7 +25,9 @@ public class AuthService(
         var newUser = new User(
             username: dto.Username,
             email: dto.Email,
-            passwordHash: passwordHash
+            passwordHash: passwordHash,
+            true,
+            Role.User
         );
 
         await userRepository.AddAsync(newUser, ct);
@@ -52,7 +54,7 @@ public class AuthService(
         CancellationToken ct = default(CancellationToken))
     {
         var user = await userRepository.GetByEmailAsync(dto.Email, ct);
-        if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash) || !user.IsActive)
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidCredentials);
 
         var (accessToken, accessTokenExpiration, refreshTokenString, refreshTokenExpiration) =
@@ -85,6 +87,13 @@ public class AuthService(
             storedToken.Revoke(DateTime.UtcNow);
             await refreshTokenRepository.UpdateAsync(storedToken, ct);
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidOrExpiredRefreshToken);
+        }
+
+        if (!storedToken.User.IsActive)
+        {
+            storedToken.Revoke(DateTime.UtcNow);
+            await refreshTokenRepository.UpdateAsync(storedToken, ct);
+            return Result<AuthResponseDto>.Failure(UserErrors.InactiveUser);
         }
 
         if (storedToken.ReplacedByTokenId.HasValue)
