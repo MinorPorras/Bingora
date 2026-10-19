@@ -1,4 +1,5 @@
 ﻿using Bingora.Api.Extensions;
+using Bingora.Api.Helpers;
 using Bingora.Application.DTOs.User;
 using Bingora.Application.Interfaces;
 using Bingora.Application.Mappings;
@@ -21,11 +22,13 @@ public static class ProfileEndpoints
                 if (!context.User.TryGetUserId(out var userId)) return Results.Unauthorized();
                 var user = await userRepository.GetByIdAsync(userId, ct);
                 return user == null
-                    ? Results.Problem(title: "Usuario no encontrado", statusCode: 404)
+                    ? ProblemResults.NotFound("Usuario no encontrado.")
                     : Results.Ok(user.ToResponseDto());
             })
             .WithSummary("GetMyProfile")
-            .WithDescription("Obtiene el perfil del usuario autenticado");
+            .WithDescription("Obtiene el perfil del usuario autenticado")
+            .Produces<UserResponseDto>(200)
+            .ProducesProblem(404);
 
         group.MapPatch("/me", async (
                 UpdateUsernameRequestDto dto,
@@ -36,14 +39,14 @@ public static class ProfileEndpoints
             {
                 var validation = await validator.ValidateAsync(dto, ct);
                 if (!validation.IsValid)
-                    return Results.ValidationProblem(validation.ToDictionary());
-
+                    return ProblemResults.Validation(validation.ToDictionary());
+                // Si no se tiene un ID no se inició sesión
                 if (!httpContext.User.TryGetUserId(out var userId))
-                    return Results.Unauthorized();
+                    return ProblemResults.Unauthorized();
 
                 var user = await userRepository.GetByIdAsync(userId, ct);
                 if (user is null)
-                    return Results.Problem(title: "Usuario no encontrado.", statusCode: 404);
+                    return ProblemResults.NotFound("Usuario no encontrado");
 
                 user.UpdateUsername(dto.NewUsername);
                 await userRepository.UpdateAsync(user, ct);
@@ -51,8 +54,12 @@ public static class ProfileEndpoints
                 return Results.NoContent();
             })
             .WithName("UpdateMyUsername")
-            .WithSummary("Actualiza mi nombre de usuario");
-        
+            .WithSummary("Actualiza el propio nombre de usuario de la cuenta")
+            .Produces(204)
+            .ProducesProblem(400)
+            .ProducesProblem(401)
+            .ProducesProblem(404);
+
         group.MapPost("/me/change-password", async (
                 ChangePasswordRequestDto dto,
                 IValidator<ChangePasswordRequestDto> validator,
@@ -63,30 +70,32 @@ public static class ProfileEndpoints
             {
                 var validation = await validator.ValidateAsync(dto, ct);
                 if (!validation.IsValid)
-                    return Results.ValidationProblem(validation.ToDictionary());
-
+                    return ProblemResults.Validation(validation.ToDictionary());
+                // Si no se tiene un ID no se inició sesión
                 if (!httpContext.User.TryGetUserId(out var userId))
-                    return Results.Unauthorized();
+                    return ProblemResults.Unauthorized();
 
                 var user = await userRepository.GetByIdAsync(userId, ct);
                 if (user is null)
-                    return Results.Problem(title: "Usuario no encontrado.", statusCode: 404);
-
+                    return ProblemResults.NotFound("Usuario no encontrado");
+                //Se verifica que la contraseña actual que se ingresó sea la registrada
                 if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
-                    return Results.Problem(
-                        title: "La contraseña actual es incorrecta.",
-                        statusCode: 400);
-
+                    return ProblemResults.BadRequest("La contraseña actual es incorrecta.");
+                //Actualiza en la base de datos la contraseña nueva hasheada 
                 user.UpdatePassword(BCrypt.Net.BCrypt.HashPassword(dto.NewPassword));
                 await userRepository.UpdateAsync(user, ct);
 
-                // Buena práctica: al cambiar contraseña, todas las sesiones existentes mueren.
+                // Todas las sesiones existentes mueren.
                 // El cliente deberá hacer login de nuevo.
                 await refreshTokens.RevokeAllByUserIdAsync(userId, ct);
 
                 return Results.NoContent();
             })
             .WithName("ChangeMyPassword")
-            .WithSummary("Cambia mi contraseña y cierra todas mis sesiones");
+            .WithSummary("Cambia mi contraseña y cierra todas mis sesiones")
+            .Produces(204)
+            .ProducesProblem(400)
+            .ProducesProblem(401)
+            .ProducesProblem(404);
     }
 }

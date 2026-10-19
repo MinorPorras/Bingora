@@ -1,14 +1,13 @@
-﻿using System.Security.Cryptography;
-using Bingora.Api.Extensions;
+﻿using Bingora.Api.Extensions;
+using Bingora.Api.Helpers;
 using Bingora.Application.DTOs.Common;
 using Bingora.Application.DTOs.User;
+using Bingora.Application.Helpers;
 using Bingora.Application.Interfaces;
 using Bingora.Application.Mappings;
-using Bingora.Application.Validators.User;
+using Bingora.Domain.Common;
 using Bingora.Domain.Enums;
 using FluentValidation;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Bingora.Api.Endpoints;
 
@@ -20,62 +19,73 @@ public static class UserManagementEndpoints
             .RequireAuthorization(policy => policy.RequireRole(nameof(Role.Admin)))
             .RequireRateLimiting("GeneralPolicy");
 
-        group.MapGet("/", async (PaginatedQuery query, IUserRepository repository, CancellationToken ct) =>
+        group.MapGet("/", async ([AsParameters] PaginatedQuery query, IUserRepository repository, CancellationToken ct) =>
             {
                 var paged = await repository.GetPagedAsync(query.PageNumber, query.PageSize, ct);
-                return Results.Ok(paged.Map(u => u.ToResponseDto()));
+                return Results.Ok(paged.MapTo(u => u.ToResponseDto()));
             })
             .WithSummary("Obtener todos los usuarios")
             .WithDescription(
-                "Permite a un administrador obtener un listado paginado de todos los usuarios del sistema.");
+                "Permite a un administrador obtener un listado paginado de todos los usuarios del sistema.")
+            .Produces<PaginatedResult<UserResponseDto>>(201);
 
         group.MapGet("/{id:guid}", async (Guid id, IUserRepository repository, CancellationToken ct) =>
             {
                 var user = await repository.GetByIdAsync(id, ct);
                 return user is null
-                    ? UserNotFound()
-                    : Results.Ok(new { user.Id, user.Username, user.Email, user.Role, user.IsActive, user.CreatedAt });
+                    ? ProblemResults.NotFound("Usuario no encontrado.")
+                    : Results.Ok(user.ToResponseDto());
             })
             .WithSummary("Obtener usuario por ID")
-            .WithDescription("Obtiene el usuario con el ID especificado");
+            .WithDescription("Obtiene el usuario con el ID especificado")
+            .Produces<UserResponseDto>(200)
+            .ProducesProblem(404);
 
         group.MapPatch("/{id:Guid}",
                 async (Guid id, UpdateUsernameRequestDto dto, IValidator<UpdateUsernameRequestDto> validator,
                     IUserRepository repository, CancellationToken ct) =>
                 {
                     var validation = await validator.ValidateAsync(dto, ct);
-                    if (!validation.IsValid) return Results.ValidationProblem(validation.ToDictionary());
+                    if (!validation.IsValid) return ProblemResults.Validation(validation.ToDictionary());
 
                     var user = await repository.GetByIdAsync(id, ct);
-                    if (user is null) return UserNotFound();
+                    if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
 
                     user.UpdateUsername(dto.NewUsername);
                     await repository.UpdateAsync(user, ct);
                     return Results.NoContent();
                 })
             .WithSummary("UpdateUsername")
-            .WithDescription("Actualiza el nombre de usuario de un usuario");
+            .WithDescription("Actualiza el nombre de usuario de un usuario")
+            .Produces(204)
+            .ProducesProblem(400)
+            .ProducesProblem(404);
 
         group.MapPatch("/{id:Guid}/email",
                 async (Guid id, UpdateEmailRequestDto dto, IValidator<UpdateEmailRequestDto> validator,
                     IUserRepository repository, CancellationToken ct) =>
                 {
                     var validation = await validator.ValidateAsync(dto, ct);
-                    if (!validation.IsValid) return Results.ValidationProblem(validation.ToDictionary());
+                    if (!validation.IsValid) return ProblemResults.Validation(validation.ToDictionary());
 
                     var user = await repository.GetByIdAsync(id, ct);
-                    if (user is null) return UserNotFound();
+                    if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
 
                     var existingEmail = await repository.GetByEmailAsync(dto.NewEmail, ct);
+                    //Si el email ya está usado y es de una cuenta distinta a la propia devuelve 409
                     if (existingEmail is not null && existingEmail.Id != id)
-                        return Results.Problem(title: "El correo ya está en uso", statusCode: 409);
+                        return ProblemResults.Conflict("El correo ya está en uso");
 
                     user.UpdateEmail(dto.NewEmail);
                     await repository.UpdateAsync(user, ct);
                     return Results.NoContent();
                 })
             .WithSummary("UpdateEmail")
-            .WithDescription("Fuerza un cambio de correo (gestión administrativa)");
+            .WithDescription("Fuerza un cambio de correo (gestión administrativa)")
+            .Produces(204)
+            .ProducesProblem(400)
+            .ProducesProblem(409)
+            .ProducesProblem(404);
 
         group.MapPatch("/{id:Guid}/role",
                 async (Guid id, UpdateUserRoleRequestDto dto, IValidator<UpdateUserRoleRequestDto> validator,
@@ -83,97 +93,82 @@ public static class UserManagementEndpoints
                     IUserRepository repository, CancellationToken ct) =>
                 {
                     var validation = await validator.ValidateAsync(dto, ct);
-                    if (!validation.IsValid) return Results.ValidationProblem(validation.ToDictionary());
+                    if (!validation.IsValid) return ProblemResults.Validation(validation.ToDictionary());
 
                     var user = await repository.GetByIdAsync(id, ct);
-                    if (user is null) return UserNotFound();
-
+                    if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
+                    //Si es el mismo o se quiere quitar el role 'Admin' devuelve 400
                     if (httpContext.User.TryGetUserId(out var callerId) && callerId == user.Id &&
                         dto.NewRole != Role.Admin)
-                        return Results.Problem(
-                            title: "No puedes quitarle el rol Admin a tu propia cuenta",
-                            statusCode: 400);
+                        return ProblemResults.BadRequest("No puedes quitarle el rol Admin a tu propia cuenta");
 
                     user.UpdateRole(dto.NewRole);
                     await repository.UpdateAsync(user, ct);
                     return Results.NoContent();
                 })
             .WithSummary("UpdateUserRole")
-            .WithDescription("Cambia el rol de un usuario (Solo admin)");
+            .WithDescription("Cambia el rol de un usuario (Solo admin)")
+            .Produces(204)
+            .ProducesProblem(400)
+            .ProducesProblem(404)
+            .ProducesProblem(400);
 
         group.MapPost("/{id:Guid}/activate", async (Guid id, IUserRepository repository, CancellationToken ct) =>
-        {
-            var user = await repository.GetByIdAsync(id, ct);
-            if (user is null) return UserNotFound();
+            {
+                var user = await repository.GetByIdAsync(id, ct);
+                if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
 
-            user.Activate();
-            await repository.UpdateAsync(user, ct);
-            return Results.NoContent();
-        });
+                user.Activate();
+                await repository.UpdateAsync(user, ct);
+                return Results.NoContent();
+            })
+            .WithSummary("ActivateUser")
+            .WithDescription("Cambia el estado de un usuario a activo (Solo admin)")
+            .Produces(204)
+            .ProducesProblem(404);
 
         group.MapPost("/{id:Guid}/deactivate",
-            async (Guid id, HttpContext httpContext, IUserRepository repository,
-                IRefreshTokenRepository refreshTokenRepository, CancellationToken ct) =>
-            {
-                if (httpContext.User.TryGetUserId(out var callerId) && callerId == id)
-                    return Results.Problem(
-                        title: "No puedes desactivar tu propia cuenta.",
-                        statusCode: 400);
+                async (Guid id, HttpContext httpContext, IUserRepository repository,
+                    IRefreshTokenRepository refreshTokenRepository, CancellationToken ct) =>
+                {
+                    //Si el usuario es el mismo no permite autodesactivarse
+                    if (httpContext.User.TryGetUserId(out var callerId) && callerId == id)
+                        return ProblemResults.BadRequest("No puedes desactivar tu propia cuenta.");
 
-                var user = await repository.GetByIdAsync(id, ct);
-                if (user is null) return UserNotFound();
+                    var user = await repository.GetByIdAsync(id, ct);
+                    if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
 
-                user.Deactivate();
-                await repository.UpdateAsync(user, ct);
+                    user.Deactivate();
+                    await repository.UpdateAsync(user, ct);
 
-                await refreshTokenRepository.RevokeAllByUserIdAsync(id, ct);
-                return Results.NoContent();
-            });
+                    await refreshTokenRepository.RevokeAllByUserIdAsync(id, ct);
+                    return Results.NoContent();
+                })
+            .WithSummary("DeactivateUser")
+            .WithDescription(
+                "Cambia el estado de un usuario a inactivo. No se puede desactivar la cuenta propia (Solo admin)")
+            .Produces(204)
+            .ProducesProblem(400)
+            .ProducesProblem(404);
 
         group.MapPost("/{id:Guid}/reset-password",
                 async (Guid id, IUserRepository userRepository, IRefreshTokenRepository refreshTokenRepository,
                     CancellationToken ct) =>
                 {
                     var user = await userRepository.GetByIdAsync(id, ct);
-                    if (user is null) return UserNotFound();
+                    if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
 
-                    var tempPassword = GenerateTempPassword();
+                    var tempPassword = PasswordGenerator.GenerateTempPassword();
                     user.UpdatePassword(BCrypt.Net.BCrypt.HashPassword(tempPassword));
                     await userRepository.UpdateAsync(user, ct);
 
                     await refreshTokenRepository.RevokeAllByUserIdAsync(id, ct);
-                    return Results.Ok(new { tempPassword });
+                    return Results.Ok(new ChangePasswordResponseDto(tempPassword));
                 })
             .WithSummary("ResetUserPassword")
-            .WithDescription("Genera una contraseña temporal y revoca las sesiones");
-    }
-
-    private static IResult UserNotFound() =>
-        Results.Problem(title: "Usuario no encontrado.", statusCode: 404);
-
-    private static string GenerateTempPassword()
-    {
-        const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-        const string lower = "abcdefghijkmnopqrstuvwxyz";
-        const string digits = "23456789";
-        const string symbols = "!@#$%&*";
-        const string all = upper + lower + digits + symbols;
-
-        var chars = new char[16];
-        chars[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
-        chars[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
-        chars[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
-        chars[3] = symbols[RandomNumberGenerator.GetInt32(symbols.Length)];
-
-        for (var i = 4; i < chars.Length; i++)
-            chars[i] = all[RandomNumberGenerator.GetInt32(all.Length)];
-
-        for (var i = chars.Length - 1; i > 0; i--)
-        {
-            var j = RandomNumberGenerator.GetInt32(i + 1);
-            (chars[i], chars[j]) = (chars[j], chars[i]);
-        }
-
-        return new string(chars);
+            .WithDescription(
+                "Genera una contraseña temporal y revoca las sesiones anteriores activas del usuario (Solo admin)")
+            .Produces<ChangePasswordResponseDto>(200)
+            .ProducesProblem(404);
     }
 }

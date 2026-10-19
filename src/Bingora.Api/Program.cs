@@ -131,6 +131,7 @@ app.UseAuthorization();
 // Mapeo de endpoints
 app.MapAuthEndpoints();
 app.MapUserManagementEndpoints();
+app.MapProfileEndpoints();
 
 
 app.Run();

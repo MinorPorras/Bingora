@@ -1,4 +1,5 @@
-﻿using Bingora.Application.DTOs.Auth;
+﻿using Bingora.Api.Helpers;
+using Bingora.Application.DTOs.Auth;
 using Bingora.Application.Interfaces;
 using Bingora.Application.Validators.Auth;
 using FluentValidation;
@@ -20,17 +21,13 @@ public static class AuthEndpoints
                 {
                     var validationResult = await validator.ValidateAsync(dto, ct);
                     if (!validationResult.IsValid)
-                        return Results.ValidationProblem(validationResult.ToDictionary());
+                        return ProblemResults.Validation(validationResult.ToDictionary());
 
 
                     var result = await authService.RegisterAsync(dto, ct);
                     return result.IsSuccess
                         ? Results.Created($"api/users/{result.Value.UserId}", result.Value)
-                        : Results.BadRequest(new ProblemDetails
-                        {
-                            Title = "Error de registro",
-                            Detail = result.Error?.Message
-                        });
+                        : ProblemResults.BadRequest("Error de registro", result.Error?.Message);
                 }
             )
             .WithSummary("RegisterUser")
@@ -49,22 +46,18 @@ public static class AuthEndpoints
                 {
                     var validationResult = await validator.ValidateAsync(dto, ct);
                     if (!validationResult.IsValid)
-                        return Results.ValidationProblem(validationResult.ToDictionary());
+                        return ProblemResults.Validation(validationResult.ToDictionary());
 
                     var result = await authService.LoginAsync(dto, ct);
                     return result.IsSuccess
                         ? Results.Ok(result.Value)
-                        : Results.Json(new ProblemDetails
-                        {
-                            Title = "Credenciales inválidas",
-                            Detail = result.Error?.Message,
-                            Status = 401
-                        }, statusCode: 401);
+                        : ProblemResults.Unauthorized("Credenciales inválidas", result.Error?.Message);
                 })
             .WithSummary("Login")
             .WithDescription(
                 "Permite que un usuario administrador inicie sesión con sus credenciales y obtiene los tokens JWT")
             .Produces<AuthResponseDto>(200)
+            .ProducesProblem(400)
             .ProducesProblem(401)
             .AllowAnonymous()
             .RequireRateLimiting("AuthPolicy");
@@ -77,12 +70,7 @@ public static class AuthEndpoints
                     var result = await service.RefreshTokenAsync(dto.RefreshToken, ct);
                     return result.IsSuccess
                         ? Results.Ok(result.Value)
-                        : Results.Json(new ProblemDetails
-                        {
-                            Title = "Token de actualización inválido",
-                            Detail = result.Error?.Message,
-                            Status = 401
-                        }, statusCode: 401);
+                        : ProblemResults.Unauthorized("Token de actualización inválido", result.Error?.Message);
                 })
             .WithSummary("Refresh")
             .WithDescription("Permite la regeneración del refresh token del usuario y rota sus tokens")
@@ -96,11 +84,7 @@ public static class AuthEndpoints
                     var result = await service.LogoutAsync(dto.RefreshToken, ct);
                     return result.IsSuccess
                         ? Results.Ok()
-                        : Results.Json(new ProblemDetails
-                        {
-                            Title = "Error al cerrar sesión",
-                            Detail = result.Error?.Message,
-                        });
+                        : ProblemResults.BadRequest("Error al cerrar sesión", result.Error?.Message);
                 })
             .WithSummary("Logout")
             .WithDescription("Permite que un usuario administrador pueda cerrar sesión y elimina su refresh token")

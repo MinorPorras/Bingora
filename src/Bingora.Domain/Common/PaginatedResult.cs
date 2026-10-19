@@ -19,7 +19,4 @@ public class PaginatedResult<T>
 
     public bool HasPreviousPage => CurrentPage > 1;
     public bool HasNextPage => CurrentPage < TotalPages;
-    
-    public PaginatedResult<TTarget> Map<TTarget>(Func<T, TTarget> selector) =>
-        new([.. Items.Select(selector)], TotalCount, CurrentPage, PageSize);
 }

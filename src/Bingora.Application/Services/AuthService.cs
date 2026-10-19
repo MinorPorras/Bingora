@@ -31,7 +31,7 @@ public class AuthService(
         );
 
         await userRepository.AddAsync(newUser, ct);
-
+        // Obtiene el nuevo par de JWT
         var (accessToken, accessTokenExpiration, refreshTokenString, refreshTokenExpiration) =
             jwtTokenGenerator.GenerateToken(newUser);
         var newRefreshToken = new RefreshToken(refreshTokenString, newUser.Id, refreshTokenExpiration);
@@ -56,7 +56,7 @@ public class AuthService(
         var user = await userRepository.GetByEmailAsync(dto.Email, ct);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash) || !user.IsActive)
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidCredentials);
-
+        // Obtiene el nuevo par de JWT
         var (accessToken, accessTokenExpiration, refreshTokenString, refreshTokenExpiration) =
             jwtTokenGenerator.GenerateToken(user);
         var newRefreshToken = new RefreshToken(refreshTokenString, user.Id, refreshTokenExpiration);
@@ -81,21 +81,21 @@ public class AuthService(
         var storedToken = await refreshTokenRepository.GetByTokenAsync(refreshToken, ct);
         if (storedToken is not { RevokedAt: null })
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidOrExpiredRefreshToken);
-
+        //Si ya expiró la desactiva
         if (storedToken.ExpiresAt < DateTime.UtcNow)
         {
             storedToken.Revoke(DateTime.UtcNow);
             await refreshTokenRepository.UpdateAsync(storedToken, ct);
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidOrExpiredRefreshToken);
         }
-
+        // Si el usuario está inactivo lo revoca
         if (!storedToken.User.IsActive)
         {
             storedToken.Revoke(DateTime.UtcNow);
             await refreshTokenRepository.UpdateAsync(storedToken, ct);
             return Result<AuthResponseDto>.Failure(UserErrors.InactiveUser);
         }
-
+        // Si el token ya fue reemplazado por otro se activan medidas contra animalias
         if (storedToken.ReplacedByTokenId.HasValue)
         {
             logger.LogWarning("ANOMALÍA DETECTADA: Reuso del refresh token del usuario {userId}.", storedToken.UserId);
@@ -112,7 +112,7 @@ public class AuthService(
         var user = storedToken.User;
         var (newAccessToken, accessTokenExpiration, refreshTokenString, refreshTokenExpiration) =
             jwtTokenGenerator.GenerateToken(user);
-
+        //Se actualiza el refresh token
         var newRefreshToken = new RefreshToken(refreshTokenString, user.Id, refreshTokenExpiration);
         storedToken.ReplaceWith(newRefreshToken.Id);
 
@@ -129,7 +129,7 @@ public class AuthService(
     {
         var storedToken = await refreshTokenRepository.GetByTokenAsync(refreshToken, ct);
         if (storedToken is null) return Result.Success();
-
+        // Revoca el refresh token del usuario
         storedToken.Revoke(DateTime.UtcNow);
         await refreshTokenRepository.UpdateAsync(storedToken, ct);
 
