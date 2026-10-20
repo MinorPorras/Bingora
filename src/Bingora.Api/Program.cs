@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -111,7 +112,33 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??=
+            new Dictionary<string, IOpenApiSecurityScheme>();
+
+        document.Components.SecuritySchemes["Bearer"] =
+            new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Name = "Authorization"
+            };
+
+        document.Security ??= [];
+        document.Security.Add(new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+        });
+
+        return Task.CompletedTask;
+    });
+});
 
 var app = builder.Build();
 
@@ -120,7 +147,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();
-    app.MapScalarApiReference().AllowAnonymous();
+    app.MapScalarApiReference(options =>
+    {
+        options.WithTitle("Bingora - Documentación (Scalar)");
+        options.WithTheme(ScalarTheme.DeepSpace);
+        options.WithOpenApiRoutePattern("/openapi/v1.json");
+        options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+    }).AllowAnonymous();
 }
 
 app.UseHttpsRedirection();

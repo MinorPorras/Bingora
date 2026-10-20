@@ -11,6 +11,6 @@ public class UpdateUsernameRequestValidator : AbstractValidator<UpdateUsernameRe
             .NotEmpty().WithMessage("El nuevo nombre de usuario es obligatorio.")
             .MinimumLength(3).WithMessage("El nombre de usuario debe tener al menos 3 caracteres.")
             .MaximumLength(50).WithMessage("El nombre de usuario debe contener menos de 50 caracteres.")
-            .Matches("[^a-zA-Z0-9_]+$").WithMessage("Solo puede contener letras, números y guiones bajos.");
+            .Matches("^[a-zA-Z0-9_]+$").WithMessage("Solo puede contener letras, números y guiones bajos.");
     }
 }

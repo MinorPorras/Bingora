@@ -109,7 +109,6 @@ public static class UserManagementEndpoints
             .WithSummary("UpdateUserRole")
             .WithDescription("Cambia el rol de un usuario (Solo admin)")
             .Produces(204)
-            .ProducesProblem(400)
             .ProducesProblem(404)
             .ProducesProblem(400);
 
