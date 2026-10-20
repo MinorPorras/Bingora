@@ -11,6 +11,7 @@ public class User
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public bool IsActive { get; private set; }
     public Role Role { get; private set; } = Role.User;
+    
 
     public User(string username, string email, string passwordHash, bool isActive, Role rol)
     {
