@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // DbSets de las tablas
     public DbSet<User> Users { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<Pattern> Patterns { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
