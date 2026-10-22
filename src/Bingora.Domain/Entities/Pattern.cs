@@ -10,6 +10,11 @@ public class Pattern
     public int Bitmask { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public bool IsActive { get; private set; } = true;
+    
+    //Navegación
+    private readonly List<BingoPattern> _bingoPatterns = [];
+    public IReadOnlyCollection<BingoPattern> BingoPatterns => _bingoPatterns.AsReadOnly();
+
 
     private Pattern()
     {

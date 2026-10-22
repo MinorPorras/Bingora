@@ -22,6 +22,66 @@ namespace Bingora.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Bingora.Domain.Entities.Bingo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TotalCards")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_bingo_name");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Bingo", "bingo");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.BingoPattern", b =>
+                {
+                    b.Property<Guid>("BingoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PatternId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AvailablePrizes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("BingoId", "PatternId");
+
+                    b.HasIndex("PatternId");
+
+                    b.ToTable("bingo_pattern", "bingo");
+                });
+
             modelBuilder.Entity("Bingora.Domain.Entities.Pattern", b =>
                 {
                     b.Property<Guid>("Id")
@@ -88,7 +148,8 @@ namespace Bingora.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Token")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_refresh_token_token");
 
                     b.HasIndex("UserId");
 
@@ -106,8 +167,8 @@ namespace Bingora.Infrastructure.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -116,8 +177,9 @@ namespace Bingora.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -127,12 +189,72 @@ namespace Bingora.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_user_email");
 
                     b.HasIndex("Username")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_user_username");
 
                     b.ToTable("user", "bingo");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.Bingo", b =>
+                {
+                    b.HasOne("Bingora.Domain.Entities.User", "Owner")
+                        .WithMany("CreatedBingos")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.OwnsMany("Bingora.Domain.ValueObjects.ColumnRange", "ColumnRanges", b1 =>
+                        {
+                            b1.Property<Guid>("BingoId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd();
+
+                            b1.Property<string>("ColumnName")
+                                .IsRequired();
+
+                            b1.Property<int>("MaxValue");
+
+                            b1.Property<int>("MinValue");
+
+                            b1.HasKey("BingoId", "__synthesizedOrdinal");
+
+                            b1.ToTable("Bingo", "bingo");
+
+                            b1
+                                .ToJson("ColumnRanges")
+                                .HasColumnType("jsonb");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BingoId");
+                        });
+
+                    b.Navigation("ColumnRanges");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.BingoPattern", b =>
+                {
+                    b.HasOne("Bingora.Domain.Entities.Bingo", "Bingo")
+                        .WithMany("BingoPatterns")
+                        .HasForeignKey("BingoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Bingora.Domain.Entities.Pattern", "Pattern")
+                        .WithMany("BingoPatterns")
+                        .HasForeignKey("PatternId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bingo");
+
+                    b.Navigation("Pattern");
                 });
 
             modelBuilder.Entity("Bingora.Domain.Entities.RefreshToken", b =>
@@ -144,6 +266,21 @@ namespace Bingora.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.Bingo", b =>
+                {
+                    b.Navigation("BingoPatterns");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.Pattern", b =>
+                {
+                    b.Navigation("BingoPatterns");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.User", b =>
+                {
+                    b.Navigation("CreatedBingos");
                 });
 #pragma warning restore 612, 618
         }

@@ -6,21 +6,21 @@ namespace Bingora.Infrastructure.Configurations;
 
 public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {
-    public void Configure(EntityTypeBuilder<RefreshToken> builder)
+    public void Configure(EntityTypeBuilder<RefreshToken> entity)
     {
-        builder.ToTable("refresh_token", "bingo");
+        entity.ToTable("refresh_token", "bingo");
 
-        builder.HasKey(r => r.Id);
+        entity.HasKey(r => r.Id);
 
-        builder.Property(r => r.Token).IsRequired().HasMaxLength(500);
-        builder.HasIndex(r => r.Token).IsUnique();
+        entity.Property(r => r.Token).IsRequired().HasMaxLength(500);
+        entity.HasIndex(r => r.Token).IsUnique().HasDatabaseName("UQ_refresh_token_token");
 
-        builder.HasOne(r => r.User)
+        entity.HasOne(r => r.User)
             .WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(r => r.CreatedAt).IsRequired();
-        builder.Property(r => r.ExpiresAt).IsRequired();
-        builder.Property(r => r.RevokedAt);
-        builder.Property(r => r.ReplacedByTokenId);
+        entity.Property(r => r.CreatedAt).IsRequired();
+        entity.Property(r => r.ExpiresAt).IsRequired();
+        entity.Property(r => r.RevokedAt);
+        entity.Property(r => r.ReplacedByTokenId);
     }
 }

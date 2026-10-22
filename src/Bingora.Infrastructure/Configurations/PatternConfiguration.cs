@@ -6,17 +6,23 @@ namespace Bingora.Infrastructure.Configurations;
 
 public class PatternConfiguration : IEntityTypeConfiguration<Pattern>
 {
-    public void Configure(EntityTypeBuilder<Pattern> builder)
+    public void Configure(EntityTypeBuilder<Pattern> entity)
     {
-        builder.ToTable("pattern", "bingo");
+        entity.ToTable("pattern", "bingo");
 
-        builder.HasKey(p => p.Id);
-        builder.Property(p => p.Name).HasMaxLength(100).IsRequired();
-        builder.Property(p => p.GridRepresentation).HasMaxLength(25).IsRequired().IsUnicode(false);
-        builder.Property(p => p.Bitmask).IsRequired();
-        builder.Property(p => p.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
-        builder.Property(p => p.IsActive);
+        entity.HasKey(p => p.Id);
 
-        builder.HasIndex(p => p.Name).HasDatabaseName("IX_pattern_Name").IsUnique().HasDatabaseName("UQ_pattern_Name");
+        entity.Property(p => p.Name).HasMaxLength(100).IsRequired();
+        entity.HasIndex(p => p.Name).HasDatabaseName("IX_pattern_Name").IsUnique().HasDatabaseName("UQ_pattern_Name");
+
+        entity.Property(p => p.GridRepresentation).HasMaxLength(25).IsRequired().IsUnicode(false);
+        entity.Property(p => p.Bitmask).IsRequired();
+        entity.Property(p => p.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP");
+        entity.Property(p => p.IsActive);
+
+        entity.HasMany(e => e.BingoPatterns)
+            .WithOne(bp => bp.Pattern)
+            .HasForeignKey(b => b.PatternId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -10,6 +10,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<User> Users { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Pattern> Patterns { get; set; }
+    public DbSet<Bingo> Bingos { get; set; }
+    public DbSet<BingoPattern> BingoPatterns { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

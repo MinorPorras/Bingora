@@ -6,20 +6,25 @@ namespace Bingora.Infrastructure.Configurations;
 
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
-    public void Configure(EntityTypeBuilder<User> builder)
+    public void Configure(EntityTypeBuilder<User> entity)
     {
-        builder.ToTable("user", "bingo");
+        entity.ToTable("user", "bingo");
 
-        builder.HasKey(x => x.Id);
+        entity.HasKey(x => x.Id);
 
-        builder.Property(u => u.Username).HasMaxLength(50).IsRequired();
-        builder.Property(u => u.Email).HasMaxLength(50).IsRequired();
+        entity.Property(u => u.Username).HasMaxLength(50).IsRequired();
+        entity.Property(u => u.Email).HasMaxLength(255).IsRequired(); 
 
-        builder.HasIndex(u => u.Username).IsUnique();
-        builder.HasIndex(u => u.Email).IsUnique();
+        entity.HasIndex(u => u.Username).IsUnique().HasDatabaseName("UQ_user_username");
+        entity.HasIndex(u => u.Email).IsUnique().HasDatabaseName("UQ_user_email");
 
-        builder.Property(u => u.PasswordHash).IsRequired();
-        builder.Property(u => u.IsActive);
-        builder.Property(u => u.Role);
+        entity.Property(u => u.PasswordHash).IsRequired();
+        entity.Property(u => u.IsActive);
+        entity.Property(u => u.Role).HasConversion<string>();
+
+        entity.HasMany(u => u.CreatedBingos)
+            .WithOne(b => b.Owner)
+            .HasForeignKey(b => b.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
