@@ -18,7 +18,7 @@ public class Bingo
     public IReadOnlyList<BingoPattern> BingoPatterns => _bingoPatterns.AsReadOnly();
     private readonly List<BingoPattern> _bingoPatterns = [];
     //public ICollection<Card> Cards { get; private set; } = new List<Card>();
-    //public ICollection<Game> Games { get; private set; } = new List<Game>();
+    public ICollection<Game> Games { get; private set; } = new List<Game>();
 
     private Bingo()
     {

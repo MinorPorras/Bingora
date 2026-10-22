@@ -12,6 +12,10 @@ public class PatternConfiguration : IEntityTypeConfiguration<Pattern>
 
         entity.HasKey(p => p.Id);
 
+        entity.Property(p => p.GridRepresentation).HasColumnName("grid_representation");
+        entity.Property(p => p.CreatedAt).HasColumnName("created_at");
+        entity.Property(p => p.IsActive).HasColumnName("is_active");
+
         entity.Property(p => p.Name).HasMaxLength(100).IsRequired();
         entity.HasIndex(p => p.Name).HasDatabaseName("IX_pattern_Name").IsUnique().HasDatabaseName("UQ_pattern_Name");
 

@@ -8,16 +8,20 @@ public class BingoPatternConfiguration : IEntityTypeConfiguration<BingoPattern>
 {
     public void Configure(EntityTypeBuilder<BingoPattern> entity)
     {
-        entity.ToTable("bingo_pattern",  "bingo");
-        entity.HasKey(e => new  { e.BingoId, e.PatternId });
+        entity.ToTable("bingo_pattern", "bingo");
+        entity.HasKey(e => new { e.BingoId, e.PatternId });
         
+        entity.Property(e => e.BingoId).HasColumnName("bingo_id");
+        entity.Property(e => e.PatternId).HasColumnName("pattern_id");
+        entity.Property(e => e.AvailablePrizes).HasColumnName("available_prizes");
+
         entity.Property(e => e.AvailablePrizes).IsRequired().HasDefaultValue(0);
-        
+
         entity.HasOne(e => e.Pattern)
             .WithMany(b => b.BingoPatterns)
             .HasForeignKey(e => e.PatternId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+
         entity.HasOne(e => e.Bingo)
             .WithMany(b => b.BingoPatterns)
             .HasForeignKey(e => e.BingoId)

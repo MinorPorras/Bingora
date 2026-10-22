@@ -12,8 +12,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         entity.HasKey(x => x.Id);
 
+        entity.Property(u => u.PasswordHash).HasColumnName("password_hash");
+        entity.Property(u => u.CreatedAt).HasColumnName("created_at");
+        entity.Property(u => u.IsActive).HasColumnName("is_active");
+
         entity.Property(u => u.Username).HasMaxLength(50).IsRequired();
-        entity.Property(u => u.Email).HasMaxLength(255).IsRequired(); 
+        entity.Property(u => u.Email).HasMaxLength(255).IsRequired();
 
         entity.HasIndex(u => u.Username).IsUnique().HasDatabaseName("UQ_user_username");
         entity.HasIndex(u => u.Email).IsUnique().HasDatabaseName("UQ_user_email");

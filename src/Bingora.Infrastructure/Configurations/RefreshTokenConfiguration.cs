@@ -12,6 +12,12 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 
         entity.HasKey(r => r.Id);
 
+        entity.Property(r => r.UserId).HasColumnName("user_id");
+        entity.Property(r => r.CreatedAt).HasColumnName("created_at");
+        entity.Property(r => r.ExpiresAt).HasColumnName("expires_at");
+        entity.Property(r => r.RevokedAt).HasColumnName("revoked_at");
+        entity.Property(r => r.ReplacedByTokenId).HasColumnName("replaced_token_id");
+
         entity.Property(r => r.Token).IsRequired().HasMaxLength(500);
         entity.HasIndex(r => r.Token).IsUnique().HasDatabaseName("UQ_refresh_token_token");
 
