@@ -11,10 +11,6 @@ public class DrawnValueConfiguration : IEntityTypeConfiguration<DrawnValue>
         entity.ToTable("drawn_value", "bingo");
         entity.HasKey(d => d.Id);
 
-        entity.Property(d => d.GameId).HasColumnName("game_id");
-        entity.Property(d => d.DrawOrder).HasColumnName("draw_order");
-        entity.Property(d => d.DrawnAt).HasColumnName("drawn_at");
-
         entity.Property(d => d.Value).HasMaxLength(50).IsRequired();
         entity.Property(e => e.DrawOrder).IsRequired();
         entity.Property(e => e.DrawnAt).HasDefaultValueSql("CURRENT_TIMESTAMP");

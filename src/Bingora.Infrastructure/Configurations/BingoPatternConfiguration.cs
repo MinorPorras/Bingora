@@ -10,10 +10,6 @@ public class BingoPatternConfiguration : IEntityTypeConfiguration<BingoPattern>
     {
         entity.ToTable("bingo_pattern", "bingo");
         entity.HasKey(e => new { e.BingoId, e.PatternId });
-        
-        entity.Property(e => e.BingoId).HasColumnName("bingo_id");
-        entity.Property(e => e.PatternId).HasColumnName("pattern_id");
-        entity.Property(e => e.AvailablePrizes).HasColumnName("available_prizes");
 
         entity.Property(e => e.AvailablePrizes).IsRequired().HasDefaultValue(0);
 

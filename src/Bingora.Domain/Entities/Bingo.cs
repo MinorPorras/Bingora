@@ -17,8 +17,11 @@ public class Bingo
     public User Owner { get; private set; } = null!;
     public IReadOnlyList<BingoPattern> BingoPatterns => _bingoPatterns.AsReadOnly();
     private readonly List<BingoPattern> _bingoPatterns = [];
-    //public ICollection<Card> Cards { get; private set; } = new List<Card>();
-    public ICollection<Game> Games { get; private set; } = new List<Game>();
+    public IReadOnlyList<Card> Cards => _cards.AsReadOnly();
+    private readonly List<Card> _cards = [];
+    public IReadOnlyList<Game> Games => _games.AsReadOnly();
+    private readonly List<Game> _games = [];
+
 
     private Bingo()
     {

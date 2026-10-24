@@ -26,7 +26,8 @@ namespace Bingora.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -37,7 +38,8 @@ namespace Bingora.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -46,7 +48,8 @@ namespace Bingora.Infrastructure.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("name");
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid")
@@ -56,14 +59,16 @@ namespace Bingora.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("total_cards");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_bingo");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_bingo_name");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("ix_bingo_owner_id");
 
-                    b.ToTable("Bingo", "bingo");
+                    b.ToTable("bingo", "bingo");
                 });
 
             modelBuilder.Entity("Bingora.Domain.Entities.BingoPattern", b =>
@@ -82,18 +87,78 @@ namespace Bingora.Infrastructure.Migrations
                         .HasDefaultValue(0)
                         .HasColumnName("available_prizes");
 
-                    b.HasKey("BingoId", "PatternId");
+                    b.HasKey("BingoId", "PatternId")
+                        .HasName("pk_bingo_pattern");
 
-                    b.HasIndex("PatternId");
+                    b.HasIndex("PatternId")
+                        .HasDatabaseName("ix_bingo_pattern_pattern_id");
 
                     b.ToTable("bingo_pattern", "bingo");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.Card", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BingoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bingo_id");
+
+                    b.Property<int>("Bitmask")
+                        .HasColumnType("integer")
+                        .HasColumnName("bitmask");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("QrCodePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("qr_code_path");
+
+                    b.Property<string>("Values")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("values");
+
+                    b.HasKey("Id")
+                        .HasName("pk_card");
+
+                    b.HasIndex("BingoId")
+                        .HasDatabaseName("IX_card_bingo_id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_card_code");
+
+                    b.ToTable("card", "bingo");
                 });
 
             modelBuilder.Entity("Bingora.Domain.Entities.DrawnValue", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<int>("DrawOrder")
                         .HasColumnType("integer")
@@ -112,9 +177,11 @@ namespace Bingora.Infrastructure.Migrations
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("value");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_drawn_value");
 
                     b.HasIndex("GameId", "DrawOrder")
                         .HasDatabaseName("IX_drawn_value_game_order");
@@ -126,7 +193,8 @@ namespace Bingora.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<int>("AnimationDuration")
                         .ValueGeneratedOnAdd()
@@ -155,19 +223,22 @@ namespace Bingora.Infrastructure.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("status");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("title");
 
                     b.Property<string>("WinnerSoundPath")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("winner_sound_path");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_game");
 
                     b.HasIndex("BingoId")
                         .HasDatabaseName("IX_game_bingo_id");
@@ -199,9 +270,11 @@ namespace Bingora.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("total_prizes");
 
-                    b.HasKey("GameId", "PatternId");
+                    b.HasKey("GameId", "PatternId")
+                        .HasName("pk_game_pattern");
 
-                    b.HasIndex("PatternId");
+                    b.HasIndex("PatternId")
+                        .HasDatabaseName("ix_game_pattern_pattern_id");
 
                     b.ToTable("game_pattern", "bingo");
                 });
@@ -210,10 +283,12 @@ namespace Bingora.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<int>("Bitmask")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("bitmask");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -235,9 +310,11 @@ namespace Bingora.Infrastructure.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_pattern");
 
                     b.HasIndex("Name")
                         .IsUnique()
@@ -246,11 +323,58 @@ namespace Bingora.Infrastructure.Migrations
                     b.ToTable("pattern", "bingo");
                 });
 
+            modelBuilder.Entity("Bingora.Domain.Entities.Player", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("card_id");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("game_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("joined_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_player");
+
+                    b.HasIndex("CardId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_player_card_id");
+
+                    b.HasIndex("GameId")
+                        .HasDatabaseName("IX_player_game_id");
+
+                    b.ToTable("player", "bingo");
+                });
+
             modelBuilder.Entity("Bingora.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -262,7 +386,7 @@ namespace Bingora.Infrastructure.Migrations
 
                     b.Property<Guid?>("ReplacedByTokenId")
                         .HasColumnType("uuid")
-                        .HasColumnName("replaced_token_id");
+                        .HasColumnName("replaced_by_token_id");
 
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp with time zone")
@@ -271,19 +395,22 @@ namespace Bingora.Infrastructure.Migrations
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("token");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_refresh_token");
 
                     b.HasIndex("Token")
                         .IsUnique()
                         .HasDatabaseName("UQ_refresh_token_token");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_refresh_token_user_id");
 
                     b.ToTable("refresh_token", "bingo");
                 });
@@ -292,7 +419,8 @@ namespace Bingora.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -301,7 +429,8 @@ namespace Bingora.Infrastructure.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -314,14 +443,17 @@ namespace Bingora.Infrastructure.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("role");
 
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("username");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_user");
 
                     b.HasIndex("Email")
                         .IsUnique()
@@ -334,13 +466,62 @@ namespace Bingora.Infrastructure.Migrations
                     b.ToTable("user", "bingo");
                 });
 
+            modelBuilder.Entity("Bingora.Domain.Entities.Winner", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ClaimStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("claim_status");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("game_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid>("PatternId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pattern_id");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<DateTime>("WonAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("won_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("Id")
+                        .HasName("pk_winner");
+
+                    b.HasIndex("GameId")
+                        .HasDatabaseName("IX_winner_game_id");
+
+                    b.HasIndex("PatternId")
+                        .HasDatabaseName("ix_winner_pattern_id");
+
+                    b.HasIndex("PlayerId")
+                        .HasDatabaseName("IX_winner_player_id");
+
+                    b.ToTable("winner", (string)null);
+                });
+
             modelBuilder.Entity("Bingora.Domain.Entities.Bingo", b =>
                 {
                     b.HasOne("Bingora.Domain.Entities.User", "Owner")
                         .WithMany("CreatedBingos")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_bingo_users_owner_id");
 
                     b.OwnsMany("Bingora.Domain.ValueObjects.ColumnRange", "ColumnRanges", b1 =>
                         {
@@ -358,14 +539,15 @@ namespace Bingora.Infrastructure.Migrations
 
                             b1.HasKey("BingoId", "__synthesizedOrdinal");
 
-                            b1.ToTable("Bingo", "bingo");
+                            b1.ToTable("bingo", "bingo");
 
                             b1
-                                .ToJson("ColumnRanges")
+                                .ToJson("column_ranges")
                                 .HasColumnType("jsonb");
 
                             b1.WithOwner()
-                                .HasForeignKey("BingoId");
+                                .HasForeignKey("BingoId")
+                                .HasConstraintName("fk_bingo_bingo_bingo_id");
                         });
 
                     b.Navigation("ColumnRanges");
@@ -379,17 +561,31 @@ namespace Bingora.Infrastructure.Migrations
                         .WithMany("BingoPatterns")
                         .HasForeignKey("BingoId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_bingo_pattern_bingo_bingo_id");
 
                     b.HasOne("Bingora.Domain.Entities.Pattern", "Pattern")
                         .WithMany("BingoPatterns")
                         .HasForeignKey("PatternId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_bingo_pattern_patterns_pattern_id");
 
                     b.Navigation("Bingo");
 
                     b.Navigation("Pattern");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.Card", b =>
+                {
+                    b.HasOne("Bingora.Domain.Entities.Bingo", "Bingo")
+                        .WithMany("Cards")
+                        .HasForeignKey("BingoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_card_bingos_bingo_id");
+
+                    b.Navigation("Bingo");
                 });
 
             modelBuilder.Entity("Bingora.Domain.Entities.DrawnValue", b =>
@@ -398,7 +594,8 @@ namespace Bingora.Infrastructure.Migrations
                         .WithMany("DrawnValues")
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_drawn_value_game_game_id");
 
                     b.Navigation("Game");
                 });
@@ -409,7 +606,8 @@ namespace Bingora.Infrastructure.Migrations
                         .WithMany("Games")
                         .HasForeignKey("BingoId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_game_bingos_bingo_id");
 
                     b.Navigation("Bingo");
                 });
@@ -420,17 +618,40 @@ namespace Bingora.Infrastructure.Migrations
                         .WithMany("GamePatterns")
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_game_pattern_game_game_id");
 
                     b.HasOne("Bingora.Domain.Entities.Pattern", "Pattern")
                         .WithMany()
                         .HasForeignKey("PatternId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_game_pattern_patterns_pattern_id");
 
                     b.Navigation("Game");
 
                     b.Navigation("Pattern");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.Player", b =>
+                {
+                    b.HasOne("Bingora.Domain.Entities.Card", "Card")
+                        .WithOne("Player")
+                        .HasForeignKey("Bingora.Domain.Entities.Player", "CardId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_player_card_card_id");
+
+                    b.HasOne("Bingora.Domain.Entities.Game", "Game")
+                        .WithMany("Players")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_player_game_game_id");
+
+                    b.Navigation("Card");
+
+                    b.Navigation("Game");
                 });
 
             modelBuilder.Entity("Bingora.Domain.Entities.RefreshToken", b =>
@@ -439,16 +660,55 @@ namespace Bingora.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_refresh_token_users_user_id");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.Winner", b =>
+                {
+                    b.HasOne("Bingora.Domain.Entities.Game", "Game")
+                        .WithMany("Winners")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_winner_game_game_id");
+
+                    b.HasOne("Bingora.Domain.Entities.Pattern", "Pattern")
+                        .WithMany()
+                        .HasForeignKey("PatternId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_winner_patterns_pattern_id");
+
+                    b.HasOne("Bingora.Domain.Entities.Player", "Player")
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_winner_player_player_id");
+
+                    b.Navigation("Game");
+
+                    b.Navigation("Pattern");
+
+                    b.Navigation("Player");
                 });
 
             modelBuilder.Entity("Bingora.Domain.Entities.Bingo", b =>
                 {
                     b.Navigation("BingoPatterns");
 
+                    b.Navigation("Cards");
+
                     b.Navigation("Games");
+                });
+
+            modelBuilder.Entity("Bingora.Domain.Entities.Card", b =>
+                {
+                    b.Navigation("Player")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Bingora.Domain.Entities.Game", b =>
@@ -456,6 +716,10 @@ namespace Bingora.Infrastructure.Migrations
                     b.Navigation("DrawnValues");
 
                     b.Navigation("GamePatterns");
+
+                    b.Navigation("Players");
+
+                    b.Navigation("Winners");
                 });
 
             modelBuilder.Entity("Bingora.Domain.Entities.Pattern", b =>

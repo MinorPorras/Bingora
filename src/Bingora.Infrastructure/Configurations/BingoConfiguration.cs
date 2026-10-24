@@ -8,13 +8,8 @@ public class BingoConfiguration : IEntityTypeConfiguration<Bingo>
 {
     public void Configure(EntityTypeBuilder<Bingo> entity)
     {
-        entity.ToTable("Bingo", "bingo");
+        entity.ToTable("bingo", "bingo");
         entity.HasKey(r => r.Id);
-
-        entity.Property(e => e.TotalCards).HasColumnName("total_cards");
-        entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-        entity.Property(e => e.OwnerId).HasColumnName("owner_id");
-        entity.Property(e => e.IsActive).HasColumnName("is_active");
 
         entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
         entity.HasIndex(e => e.Name).HasDatabaseName("IX_bingo_name");
@@ -24,7 +19,6 @@ public class BingoConfiguration : IEntityTypeConfiguration<Bingo>
         entity.Property(e => e.TotalCards).IsRequired();
 
         entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
 
         entity.OwnsMany(b => b.ColumnRanges, cb => { cb.ToJson(); });
 

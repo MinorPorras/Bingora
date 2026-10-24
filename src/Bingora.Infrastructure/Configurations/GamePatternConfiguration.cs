@@ -11,10 +11,8 @@ public class GamePatternConfiguration : IEntityTypeConfiguration<GamePattern>
         entity.ToTable("game_pattern", "bingo");
         entity.HasKey(e => new { e.GameId, e.PatternId });
 
-        entity.Property(e => e.GameId).HasColumnName("game_id");
-        entity.Property(e => e.PatternId).HasColumnName("pattern_id");
-        entity.Property(e => e.ClaimedPrizes).HasColumnName("claimed_prizes");
-        entity.Property(e => e.TotalPrizes).HasColumnName("total_prizes");
+        entity.Property(e => e.GameId);
+        entity.Property(e => e.PatternId);
 
         entity.Property(e => e.TotalPrizes).IsRequired();
         entity.Property(e => e.ClaimedPrizes).HasDefaultValue(0);

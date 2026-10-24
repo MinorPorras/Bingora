@@ -22,11 +22,11 @@ public class Game
     private readonly List<DrawnValue> _drawnValues = [];
     public IReadOnlyCollection<DrawnValue> DrawnValues => _drawnValues.AsReadOnly();
 
-    /*private readonly List<GamePlayer> _players = new();
-    public IReadOnlyCollection<GamePlayer> Players => _players.AsReadOnly();
+    private readonly List<Player> _players = [];
+    public IReadOnlyCollection<Player> Players => _players.AsReadOnly();
 
-    private readonly List<Winner> _winners = new();
-    public IReadOnlyCollection<Winner> Winners => _winners.AsReadOnly();*/
+    private readonly List<Winner> _winners = [];
+    public IReadOnlyCollection<Winner> Winners => _winners.AsReadOnly();
 
 
     private Game()
@@ -57,7 +57,8 @@ public class Game
     public void Start()
     {
         if (Status != GameStatus.Created)
-            throw new InvalidOperationException("Solo se puede iniciar una partida que no se haya iniciado previamente.");
+            throw new InvalidOperationException(
+                "Solo se puede iniciar una partida que no se haya iniciado previamente.");
         StartedAt = DateTime.UtcNow;
         Status = GameStatus.InProgress;
     }
@@ -75,7 +76,7 @@ public class Game
             throw new InvalidOperationException("Solo se puede reanudar una partida que esté pausado.");
         Status = GameStatus.InProgress;
     }
-    
+
     public void Finish()
     {
         if (Status != GameStatus.InProgress && Status != GameStatus.Paused)
@@ -83,7 +84,7 @@ public class Game
         Status = GameStatus.Finished;
         FinishedAt = DateTime.UtcNow;
     }
-    
+
     //Gestión de colecciones
     public void AddDrawnValue(string value, int drawOrder)
     {
@@ -93,11 +94,12 @@ public class Game
         var drawnValue = new DrawnValue(this.Id, value, drawOrder);
         _drawnValues.Add(drawnValue);
     }
-    
+
     public void AddPattern(Guid patternId, int totalPrizes)
     {
         if (Status != GameStatus.Created)
-            throw new InvalidOperationException("Los patrones de una partida solo se pueden configurar antes de iniciarla.");
+            throw new InvalidOperationException(
+                "Los patrones de una partida solo se pueden configurar antes de iniciarla.");
 
         if (_gamePatterns.Any(gp => gp.PatternId == patternId))
             throw new InvalidOperationException("Este patrón ya está configurado en la partida.");
@@ -105,6 +107,4 @@ public class Game
         var gamePattern = GamePattern.Create(this.Id, patternId, totalPrizes);
         _gamePatterns.Add(gamePattern);
     }
-    
-    
 }
