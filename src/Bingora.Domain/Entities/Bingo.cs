@@ -22,10 +22,12 @@ public class Bingo
     public IReadOnlyList<Game> Games => _games.AsReadOnly();
     private readonly List<Game> _games = [];
 
-
     private Bingo()
     {
     }
+
+    public void Activate() => IsActive = true;
+    public void Deactivate() => IsActive = false;
 
     private static void Validate(string name, int totalCards, IReadOnlyList<ColumnRange> columnRanges)
     {

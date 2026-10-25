@@ -8,7 +8,7 @@ public class WinnerConfiguration : IEntityTypeConfiguration<Winner>
 {
     public void Configure(EntityTypeBuilder<Winner> entity)
     {
-        entity.ToTable("winner");
+        entity.ToTable("winner", "bingo");
         entity.HasKey(w => w.Id);
 
         entity.Property(w => w.ClaimStatus).HasConversion<int>();

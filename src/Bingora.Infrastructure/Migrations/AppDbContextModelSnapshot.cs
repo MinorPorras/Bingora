@@ -511,7 +511,7 @@ namespace Bingora.Infrastructure.Migrations
                     b.HasIndex("PlayerId")
                         .HasDatabaseName("IX_winner_player_id");
 
-                    b.ToTable("winner", (string)null);
+                    b.ToTable("winner", "bingo");
                 });
 
             modelBuilder.Entity("Bingora.Domain.Entities.Bingo", b =>

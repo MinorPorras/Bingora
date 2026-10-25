@@ -1,7 +1,7 @@
 ﻿using Bingora.Application.DTOs.Pattern;
 using FluentValidation;
 
-namespace Bingora.Application.Validators;
+namespace Bingora.Application.Validators.Bingo;
 
 public class CreateUpdatePatternRequestValidator : AbstractValidator<CreateUpdatePatternRequestDto>
 {
