@@ -24,8 +24,27 @@ public class BingoRepository(AppDbContext context) : IBingoRepository
         return new PaginatedResult<Bingo>(items, page, total, size);
     }
 
+    public async Task<PaginatedResult<Bingo>> GetPagedAsyncIgnoringFilters(Guid ownerId, int pageNumber, int pageSize,
+        CancellationToken ct = default)
+    {
+        var page = Math.Max(1, pageNumber);
+        var size = Math.Clamp(pageSize, 1, 100);
+
+        var query = context.Bingos.AsNoTracking().IgnoreQueryFilters()
+            .Where(b => b.OwnerId == ownerId)
+            .OrderBy(x => x.CreatedAt);
+
+        var total = await query.CountAsync(ct);
+        var items = await query.Skip((page - 1) * size).Take(size).ToListAsync(ct);
+        return new PaginatedResult<Bingo>(items, page, total, size);
+    }
+
     public async Task<Bingo?> GetByIdAsync(Guid id, Guid ownerId, CancellationToken ct = default) =>
         await context.Bingos.Include(b => b.BingoPatterns).ThenInclude(bp => bp.Pattern)
+            .FirstOrDefaultAsync(x => x.Id == id && x.OwnerId == ownerId, ct);
+
+    public async Task<Bingo?> GetByIdAsyncIgnoringFilters(Guid id, Guid ownerId, CancellationToken ct = default) =>
+        await context.Bingos.IgnoreQueryFilters().Include(b => b.BingoPatterns).ThenInclude(bp => bp.Pattern)
             .FirstOrDefaultAsync(x => x.Id == id && x.OwnerId == ownerId, ct);
 
     public async Task<PaginatedResult<Bingo>> GetPagedByNameAsync(Guid ownerId, string name, int pageNumber,

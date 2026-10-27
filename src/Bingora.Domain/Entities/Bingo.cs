@@ -26,8 +26,19 @@ public class Bingo
     {
     }
 
-    public void Activate() => IsActive = true;
-    public void Deactivate() => IsActive = false;
+    public void SoftDelete()
+    {
+        if (!IsActive)
+            throw new InvalidOperationException("El Bingo ya está eliminado.");
+        IsActive = false;
+    }
+
+    public void Restore()
+    {
+        if (IsActive)
+            throw new InvalidOperationException("El Bingo ya está activo.");
+        IsActive = true;
+    }
 
     private static void Validate(string name, int totalCards, IReadOnlyList<ColumnRange> columnRanges)
     {

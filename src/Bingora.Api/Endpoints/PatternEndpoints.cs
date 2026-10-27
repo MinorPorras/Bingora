@@ -96,12 +96,12 @@ public static class PatternEndpoints
             .ProducesProblem(400)
             .ProducesProblem(404);
 
-        group.MapPatch("/activate/{id:guid}",
+        group.MapPatch("/{id:guid}/restore",
                 async (Guid id, HttpContext context, IPatternRepository repository, CancellationToken ct) =>
                 {
                     var pattern = await repository.GetByIdAsync(id, ct);
                     if (pattern is null) return ProblemResults.NotFound("No se encontró el patrón a activar");
-                    pattern.Activate();
+                    pattern.Restore();
                     await repository.UpdateAsync(pattern, ct);
                     return Results.NoContent();
                 })
@@ -110,12 +110,12 @@ public static class PatternEndpoints
             .Produces(204)
             .ProducesProblem(404);
 
-        group.MapPatch("/deactivate/{id:guid}",
+        group.MapPatch("/{id:guid}/soft-delete",
                 async (Guid id, HttpContext context, IPatternRepository repository, CancellationToken ct) =>
                 {
                     var pattern = await repository.GetByIdAsync(id, ct);
                     if (pattern is null) return ProblemResults.NotFound("No se encontró el patrón a desactivar");
-                    pattern.Deactivate();
+                    pattern.SoftDelete();
                     await repository.UpdateAsync(pattern, ct);
                     return Results.NoContent();
                 })

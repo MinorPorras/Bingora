@@ -1,5 +1,4 @@
 ﻿using Bingora.Domain.Enums;
-
 namespace Bingora.Domain.Entities;
 
 public class Game

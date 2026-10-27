@@ -17,6 +17,20 @@ public class Player
     {
     }
 
+    public void SoftDelete()
+    {
+        if (!IsActive)
+            throw new InvalidOperationException("El Bingo ya está eliminado.");
+        IsActive = false;
+    }
+
+    public void Restore()
+    {
+        if (IsActive)
+            throw new InvalidOperationException("El Bingo ya está activo.");
+        IsActive = true;
+    }
+
     public static Player Create(Guid gameId, Guid cardId, string playerName)
     {
         if (string.IsNullOrEmpty(playerName))

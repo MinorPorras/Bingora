@@ -112,12 +112,12 @@ public static class UserManagementEndpoints
             .ProducesProblem(404)
             .ProducesProblem(400);
 
-        group.MapPost("/{id:Guid}/activate", async (Guid id, IUserRepository repository, CancellationToken ct) =>
+        group.MapPost("/{id:Guid}/restore", async (Guid id, IUserRepository repository, CancellationToken ct) =>
             {
                 var user = await repository.GetByIdAsync(id, ct);
                 if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
 
-                user.Activate();
+                user.Restore();
                 await repository.UpdateAsync(user, ct);
                 return Results.NoContent();
             })
@@ -126,7 +126,7 @@ public static class UserManagementEndpoints
             .Produces(204)
             .ProducesProblem(404);
 
-        group.MapPost("/{id:Guid}/deactivate",
+        group.MapPost("/{id:Guid}/soft-delete",
                 async (Guid id, HttpContext httpContext, IUserRepository repository,
                     IRefreshTokenRepository refreshTokenRepository, CancellationToken ct) =>
                 {
@@ -137,7 +137,7 @@ public static class UserManagementEndpoints
                     var user = await repository.GetByIdAsync(id, ct);
                     if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
 
-                    user.Deactivate();
+                    user.SoftDelete();
                     await repository.UpdateAsync(user, ct);
 
                     await refreshTokenRepository.RevokeAllByUserIdAsync(id, ct);

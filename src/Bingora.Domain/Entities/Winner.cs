@@ -20,6 +20,20 @@ public class Winner
     private Winner()
     {
     }
+    
+    public void SoftDelete()
+    {
+        if (!IsActive)
+            throw new InvalidOperationException("El Bingo ya está eliminado.");
+        IsActive = false;
+    }
+
+    public void Restore()
+    {
+        if (IsActive)
+            throw new InvalidOperationException("El Bingo ya está activo.");
+        IsActive = true;
+    }
 
     public static Winner Create(Guid gameId, Guid playerId, Guid patternId) => new Winner
     {
@@ -48,6 +62,6 @@ public class Winner
         ClaimStatus = PrizeClaimStatus.PendingVerification;
     }
 
-    //A futuro se puede agregar una propiedad RejectionReason si es necesaria para indicar al razón del rechazo de la entrega del premio
+    //A futuro se puede agregar una propiedad RejectionReason si es necesaria para indicar la razón del rechazo de la entrega del premio
     public void Reject() => ClaimStatus = PrizeClaimStatus.Rejected;
 }

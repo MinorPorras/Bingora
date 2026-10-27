@@ -19,5 +19,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         // Configuraciones personalizadas de cada entidad
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        //Global filter for softDelete
+        builder.Entity<Bingo>().HasQueryFilter(b => b.IsActive);
+        builder.Entity<Pattern>().HasQueryFilter(b => b.IsActive);
+        builder.Entity<Card>().HasQueryFilter(b => b.IsActive);
+        builder.Entity<User>().HasQueryFilter(b => b.IsActive);
+        builder.Entity<Player>().HasQueryFilter(b => b.IsActive);
+        builder.Entity<Winner>().HasQueryFilter(b => b.IsActive);
     }
 }

@@ -20,6 +20,20 @@ public class Card
     {
     }
 
+    public void SoftDelete()
+    {
+        if (!IsActive)
+            throw new InvalidOperationException("El Bingo ya está eliminado.");
+        IsActive = false;
+    }
+
+    public void Restore()
+    {
+        if (IsActive)
+            throw new InvalidOperationException("El Bingo ya está activo.");
+        IsActive = true;
+    }
+
     public static Card Create(Guid bingoId, string code, string values, int bitmask)
     {
         if (string.IsNullOrEmpty(code))

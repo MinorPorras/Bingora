@@ -10,7 +10,7 @@ public class Pattern
     public int Bitmask { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public bool IsActive { get; private set; } = true;
-    
+
     //Navegación
     private readonly List<BingoPattern> _bingoPatterns = [];
     public IReadOnlyCollection<BingoPattern> BingoPatterns => _bingoPatterns.AsReadOnly();
@@ -20,8 +20,19 @@ public class Pattern
     {
     }
 
-    public void Activate() => IsActive = true;
-    public void Deactivate() => IsActive = false;
+    public void SoftDelete()
+    {
+        if (!IsActive)
+            throw new InvalidOperationException("El Bingo ya está eliminado.");
+        IsActive = false;
+    }
+
+    public void Restore()
+    {
+        if (IsActive)
+            throw new InvalidOperationException("El Bingo ya está activo.");
+        IsActive = true;
+    }
 
     public static Pattern Create(string name, string gridRepresentation)
     {

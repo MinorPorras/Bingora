@@ -29,6 +29,14 @@ public static class BingoEndpoints
                 var paged = await repository.GetPagedAsync(userId, query.PageNumber, query.PageSize, ct);
                 return Results.Ok(paged.MapTo(b => b.ToResponseDto()));
             });
+        group.MapGet("/trash",
+            async ([AsParameters] PaginatedQuery query, HttpContext context, IBingoRepository repository,
+                CancellationToken ct) =>
+            {
+                if (!context.User.TryGetUserId(out var userId)) return ProblemResults.Unauthorized();
+                var paged = await repository.GetPagedAsyncIgnoringFilters(userId, query.PageNumber, query.PageSize, ct);
+                return Results.Ok(paged.MapTo(b => b.ToResponseDto()));
+            });
 
         group.MapGet("/search/{name}",
             async (string name, [AsParameters] PaginatedQuery query, HttpContext context, IBingoRepository repository,
@@ -44,6 +52,16 @@ public static class BingoEndpoints
             {
                 if (!context.User.TryGetUserId(out var userId)) return ProblemResults.Unauthorized();
                 var result = await repository.GetByIdAsync(id, userId, ct);
+                return result is null
+                    ? ProblemResults.NotFound()
+                    : Results.Ok(result.ToResponseDto());
+            });
+        
+        group.MapGet("/trash-details/{id:guid}/",
+            async (Guid id, HttpContext context, IBingoRepository repository, CancellationToken ct) =>
+            {
+                if (!context.User.TryGetUserId(out var userId)) return ProblemResults.Unauthorized();
+                var result = await repository.GetByIdAsyncIgnoringFilters(id, userId, ct);
                 return result is null
                     ? ProblemResults.NotFound()
                     : Results.Ok(result.ToResponseDto());
@@ -93,7 +111,7 @@ public static class BingoEndpoints
                 return Results.Ok(bingo.ToResponseDto());
             });
 
-        group.MapPost("/{id:guid}/activate",
+        group.MapPost("/{id:guid}/restore",
             async (Guid id, HttpContext context, IBingoRepository repository, CancellationToken ct) =>
             {
                 if (!context.User.TryGetUserId(out var userId))
@@ -101,12 +119,12 @@ public static class BingoEndpoints
                 var bingo = await repository.GetByIdAsync(id, userId, ct);
                 if (bingo == null)
                     return ProblemResults.NotFound();
-                bingo.Activate();
+                bingo.SoftDelete();
                 await repository.UpdateAsync(bingo, ct);
                 return Results.Ok();
             });
 
-        group.MapPost("/{id:guid}/deactivate",
+        group.MapPost("/{id:guid}/soft-delete",
             async (Guid id, HttpContext context, IBingoRepository repository, CancellationToken ct) =>
             {
                 if (!context.User.TryGetUserId(out var userId))
@@ -114,7 +132,7 @@ public static class BingoEndpoints
                 var bingo = await repository.GetByIdAsync(id, userId, ct);
                 if (bingo == null)
                     return ProblemResults.NotFound();
-                bingo.Deactivate();
+                bingo.Restore();
                 await repository.UpdateAsync(bingo, ct);
                 return Results.Ok();
             });

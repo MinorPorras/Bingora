@@ -31,8 +31,20 @@ public class User
     {
     }
 
-    public void Activate() => IsActive = true;
-    public void Deactivate() => IsActive = false;
+    public void SoftDelete()
+    {
+        if (!IsActive)
+            throw new InvalidOperationException("El Bingo ya está eliminado.");
+        IsActive = false;
+    }
+
+    public void Restore()
+    {
+        if (IsActive)
+            throw new InvalidOperationException("El Bingo ya está activo.");
+        IsActive = true;
+    }
+
     public void UpdateUsername(string username) => Username = username;
     public void UpdateEmail(string email) => Email = email;
     public void UpdatePassword(string passwordHash) => PasswordHash = passwordHash;
