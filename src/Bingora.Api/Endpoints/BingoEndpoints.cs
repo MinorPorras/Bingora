@@ -8,8 +8,7 @@ using Bingora.Application.Validators.Bingo;
 using Bingora.Domain.Entities;
 using Bingora.Domain.Enums;
 using Bingora.Domain.ValueObjects;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using FluentValidation;
 
 namespace Bingora.Api.Endpoints;
 
@@ -56,7 +55,7 @@ public static class BingoEndpoints
                     ? ProblemResults.NotFound()
                     : Results.Ok(result.ToResponseDto());
             });
-        
+
         group.MapGet("/trash-details/{id:guid}/",
             async (Guid id, HttpContext context, IBingoRepository repository, CancellationToken ct) =>
             {
@@ -68,7 +67,7 @@ public static class BingoEndpoints
             });
 
         group.MapPost("/",
-            async (CreateOrUpdateBingoRequestDto dto, CreateOrUpdateBingoRequestValidator validator,
+            async (CreateOrUpdateBingoRequestDto dto, IValidator<CreateOrUpdateBingoRequestDto> validator,
                 HttpContext context, IBingoRepository repository, CancellationToken ct) =>
             {
                 var validationResult = await validator.ValidateAsync(dto, ct);
@@ -91,7 +90,7 @@ public static class BingoEndpoints
             });
 
         group.MapPut("/{id:guid}",
-            async (Guid id, CreateOrUpdateBingoRequestDto dto, CreateOrUpdateBingoRequestValidator validator,
+            async (Guid id, CreateOrUpdateBingoRequestDto dto, IValidator<CreateOrUpdateBingoRequestDto> validator,
                 HttpContext context,
                 IBingoRepository repository, CancellationToken ct) =>
             {
@@ -138,7 +137,7 @@ public static class BingoEndpoints
             });
 
         group.MapPost("/{id:guid}/patterns", async (Guid id, PatternManagementRequestDto dto,
-            PatternManagementRequestValidator validator, HttpContext context, IBingoRepository repository,
+            IValidator<PatternManagementRequestDto> validator, HttpContext context, IBingoRepository repository,
             CancellationToken ct) =>
         {
             var validationResult = await validator.ValidateAsync(dto, ct);
@@ -155,7 +154,7 @@ public static class BingoEndpoints
         });
 
         group.MapPut("/{id:guid}/patterns", async (Guid id, PatternManagementRequestDto dto,
-            PatternManagementRequestValidator validator, HttpContext context, IBingoRepository repository,
+            IValidator<PatternManagementRequestDto> validator, HttpContext context, IBingoRepository repository,
             CancellationToken ct) =>
         {
             var validationResult = await validator.ValidateAsync(dto, ct);
@@ -172,7 +171,7 @@ public static class BingoEndpoints
         });
 
         group.MapDelete("/{id:guid}/patterns", async (Guid id, PatternManagementRequestDto dto,
-            PatternManagementRequestValidator validator, HttpContext context, IBingoRepository repository,
+            IValidator<PatternManagementRequestDto> validator, HttpContext context, IBingoRepository repository,
             CancellationToken ct) =>
         {
             var validationResult = await validator.ValidateAsync(dto, ct);
