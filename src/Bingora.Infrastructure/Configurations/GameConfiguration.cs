@@ -10,16 +10,14 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
     {
         entity.ToTable("game", "bingo");
         entity.HasKey(e => e.Id);
-        
 
         entity.HasIndex(g => g.BingoId).HasDatabaseName("IX_game_bingo_id");
+        entity.HasIndex(g => g.GameCode).IsUnique().HasDatabaseName("UQ_game_code");
 
         entity.Property(g => g.Title).HasMaxLength(150).IsRequired();
-        entity.HasIndex(g => g.Title)
-            .IsUnique()
-            .HasDatabaseName("UQ_game_title");
-
-        entity.Property(g => g.Status).HasConversion<string>().HasMaxLength(128).IsRequired();
+        entity.Property(g => g.GameCode).HasMaxLength(10).IsRequired();
+        entity.Property(g => g.AccessPassword).HasMaxLength(10).IsRequired(false); 
+        entity.Property(g => g.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
         entity.Property(g => g.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         entity.Property(g => g.StartedAt);
         entity.Property(g => g.FinishedAt);

@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace Bingora.Application.Validators.Game;
 
-public class CreateGameRequestValidator : AbstractValidator<CreateGameRequestDto>
+public class CreateGameRequestValidator : AbstractValidator<CreateOrUpdateGameRequestDto>
 {
     public CreateGameRequestValidator()
     {
@@ -16,5 +16,8 @@ public class CreateGameRequestValidator : AbstractValidator<CreateGameRequestDto
 
         RuleFor(gp => gp.AnimationDuration)
             .GreaterThanOrEqualTo(0).WithMessage("La duración de la animación no puede ser menor a 0.");
+
+        RuleFor(gp => gp.AccessPassWord).MaximumLength(10)
+            .WithMessage("La contraseña no puede ser mayor a 10 caracteres.");
     }
 }

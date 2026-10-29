@@ -4,17 +4,20 @@ public class Card
 {
     public Guid Id { get; private set; }
     public Guid BingoId { get; private set; }
+    public Guid GameId { get; private set; }
     public string Code { get; private set; } = string.Empty;
+    public Guid? PlayerId { get; private set; }
     public string QrCodePath { get; private set; } = string.Empty;
     public string Values { get; private set; } = string.Empty; //Ej: "1,15,22..."
     public int Bitmask { get; private set; }
     public DateTime CreatedAt { get; private set; }
-    public bool IsActive { get; set; }
+    public bool IsActive { get; private set; } = true;
 
 
     //Navegación
     public Bingo Bingo { get; private set; }
-    public Player Player { get; private set; }
+    public Game Game { get; private set; }
+    public Player? Player { get; private set; }
 
     private Card()
     {
@@ -23,18 +26,18 @@ public class Card
     public void SoftDelete()
     {
         if (!IsActive)
-            throw new InvalidOperationException("El Bingo ya está eliminado.");
+            throw new InvalidOperationException("El cartón ya está eliminado.");
         IsActive = false;
     }
 
     public void Restore()
     {
         if (IsActive)
-            throw new InvalidOperationException("El Bingo ya está activo.");
+            throw new InvalidOperationException("El cartón ya está activo.");
         IsActive = true;
     }
 
-    public static Card Create(Guid bingoId, string code, string values, int bitmask)
+    public static Card Create(Guid bingoId, Guid gameId, string code, string values, int bitmask)
     {
         if (string.IsNullOrEmpty(code))
             throw new ArgumentException("El código del cartón es obligatorio.", nameof(code));
@@ -46,12 +49,25 @@ public class Card
         {
             Id = Guid.NewGuid(),
             BingoId = bingoId,
+            GameId = gameId,
             Code = code.Trim().ToUpper(),
+            PlayerId = null,
             Values = values,
             Bitmask = bitmask,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
+    }
+
+    public void AssignPlayer(Guid playerId)
+    {
+        if (playerId == Guid.Empty)
+            throw new ArgumentException("El Id del jugador es obligatorio.", nameof(playerId));
+
+        if (PlayerId != null)
+            throw new InvalidOperationException("Este cartón ya está asignado a un jugador.");
+
+        PlayerId = playerId;
     }
 
     public void UpdateQrPath(string qrCodePath)
