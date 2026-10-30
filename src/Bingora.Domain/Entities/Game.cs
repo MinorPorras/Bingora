@@ -153,6 +153,27 @@ public class Game
         }
     }
 
+    public void AddPlayer(string playerName, Card assignedCard)
+    {
+        if (Status != GameStatus.Finished)
+            throw new InvalidOperationException("No se puede agregar jugadores a un juego ya finalizado.");
+        if (_players.Any(p => p.Name.Equals(playerName, StringComparison.InvariantCultureIgnoreCase)))
+            throw new InvalidOperationException("Ya existe un jugador con ese nombre en la partida.");
+        var player = Player.Create(this.Id, assignedCard.Id, playerName);
+        _players.Add(player);
+        assignedCard.AssignPlayer(player.Id);
+    }
+
+    public void RemovePlayer(Guid playerId)
+    {
+        var player = _players.FirstOrDefault(p => p.Id == playerId);
+        if (player is null)
+            throw new InvalidOperationException("El jugador no se encuentra en la partida");
+        _players.Remove(player);
+        var card = _cards.FirstOrDefault(c => c.Id == player.CardId);
+        card?.UnassignPlayer();
+    }
+
     // Helper
     public bool VerifyJoinPassword(string? inputPassword)
     {

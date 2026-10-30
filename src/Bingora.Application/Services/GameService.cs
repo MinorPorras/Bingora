@@ -4,13 +4,13 @@ using Bingora.Application.Interfaces;
 using Bingora.Application.Mappings;
 using Bingora.Domain.Common;
 using Bingora.Domain.Entities;
+using Bingora.Domain.Enums;
 using Bingora.Domain.Errors;
 
 namespace Bingora.Application.Services;
 
 public class GameService(IBingoRepository bingoRepository, IGameRepository gameRepository) : IGameService
 {
-
     public async Task<Result<GameResponseDto>> CreateGameAsync(Guid ownerId, CreateOrUpdateGameRequestDto dto,
         CancellationToken ct = default)
     {
@@ -26,7 +26,8 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
     }
 
 
-    public async Task<Result<GameResponseDto>> UpdateGameAsync(Guid gameId, Guid ownerId, CreateOrUpdateGameRequestDto dto,
+    public async Task<Result<GameResponseDto>> UpdateGameAsync(Guid gameId, Guid ownerId,
+        CreateOrUpdateGameRequestDto dto,
         CancellationToken ct = default)
     {
         var game = await gameRepository.GetByIdAsync(gameId, ownerId, ct);
@@ -60,5 +61,107 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
             .Select(c => c.Code)
             .ToList();
         return Result<GeneratedCardsResponseDto>.Success(new GeneratedCardsResponseDto(quantity, newCodes));
+    }
+
+    public async Task<Result<JoinGameResponseDto>> JoinGameAsync(JoinGameRequestDto dto, CancellationToken ct = default)
+    {
+        var game = await gameRepository.GetByCodeAsync(dto.GameCode, ct);
+        if (game is null) return Result<JoinGameResponseDto>.Failure(GameErrors.NotFound);
+        if (!game.VerifyJoinPassword(dto.AccessPassword))
+            return Result<JoinGameResponseDto>.Failure(GameErrors.InvalidPassword);
+        if (game.Status == GameStatus.Finished)
+            return Result<JoinGameResponseDto>.Failure(GameErrors.GameFinished);
+        var availableCard = game.Cards.FirstOrDefault(c => c.PlayerId == null);
+        if (availableCard is null)
+            return Result<JoinGameResponseDto>.Failure(GameErrors.NoCardsAvailable);
+        game.AddPlayer(dto.PlayerName, availableCard);
+        await gameRepository.UpdateAsync(game, ct);
+
+        return Result<JoinGameResponseDto>.Success(new JoinGameResponseDto(
+            availableCard.PlayerId!.Value,
+            dto.PlayerName,
+            availableCard.Code,
+            game.Title)
+        );
+    }
+
+    public async Task<Result<JoinGameResponseDto>> JoinGameWithCardAsync(JoinWithCardRequestDto dto,
+        CancellationToken ct)
+    {
+        var game = await gameRepository.GetByCodeAsync(dto.GameCode, ct);
+        if (game is null) return Result<JoinGameResponseDto>.Failure(GameErrors.InvalidCode);
+
+        if (!game.VerifyJoinPassword(dto.AccessPassword))
+            return Result<JoinGameResponseDto>.Failure(GameErrors.InvalidPassword);
+
+        if (game.Status == GameStatus.Finished)
+            return Result<JoinGameResponseDto>.Failure(GameErrors.GameFinished);
+
+        var card = game.Cards.FirstOrDefault(c =>
+            c.Code.Equals(dto.CardCode, StringComparison.InvariantCultureIgnoreCase));
+        if (card is null)
+            return Result<JoinGameResponseDto>.Failure(CardErrors.NotFound);
+
+        if (card.PlayerId != null)
+            return Result<JoinGameResponseDto>.Failure(CardErrors.AlreadyAssigned);
+
+        game.AddPlayer(dto.PlayerName, card);
+        await gameRepository.UpdateAsync(game, ct);
+        return Result<JoinGameResponseDto>.Success(new JoinGameResponseDto(
+            card.PlayerId!.Value,
+            dto.PlayerName,
+            card.Code,
+            game.Title)
+        );
+    }
+
+    public async Task<Result> LeaveGameAsync(LeaveGameRequestDto dto, CancellationToken ct = default)
+    {
+        var game = await gameRepository.GetByIdForManagementAsync(dto.GameId, ct);
+        if (game is null) return Result.Failure(GameErrors.NotFound);
+
+        if (game.Players.All(p => p.Id != dto.PlayerId))
+            return Result.Failure(PlayerErrors.NotFound);
+
+        if (game.Status == GameStatus.Finished)
+            return Result.Failure(GameErrors.GameFinished);
+
+        game.RemovePlayer(dto.PlayerId);
+        await gameRepository.UpdateAsync(game, ct);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> KickPlayerAsync(LeaveGameRequestDto dto,
+        CancellationToken ct = default)
+    {
+        var game = await gameRepository.GetByIdForManagementAsync(dto.GameId, ct);
+        if (game is null) return Result.Failure(GameErrors.NotFound);
+        if (game.Players.All(p => p.Id != dto.PlayerId))
+            return Result.Failure(PlayerErrors.NotFound);
+
+        game.RemovePlayer(dto.PlayerId);
+        await gameRepository.UpdateAsync(game, ct);
+
+        return Result.Success();
+    }
+
+    public async Task<Result<GamePlayersResponseDto>> GetPlayersAsync(Guid gameId, Guid ownerId, CancellationToken ct)
+    {
+        var game = await gameRepository.GetByIdForManagementAsync(gameId, ct);
+        if (game is null || game.Bingo.OwnerId != ownerId)
+            return Result<GamePlayersResponseDto>.Failure(GameErrors.NotFound);
+
+        var playersDto = game.Players.Select(p => new PlayerInfoDto(
+            p.Id,
+            p.Name,
+            game.Cards.First(c => c.Id == p.CardId).Code // Sabemos que el CardId es válido
+        )).ToList();
+
+        return Result<GamePlayersResponseDto>.Success(new GamePlayersResponseDto(
+            game.Title,
+            game.Status,
+            playersDto
+        ));
     }
 }

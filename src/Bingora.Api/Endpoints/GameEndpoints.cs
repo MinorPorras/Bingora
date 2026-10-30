@@ -16,6 +16,8 @@ public static class GameEndpoints
             .RequireAuthorization(policy => policy.RequireRole(nameof(Role.User), nameof(Role.Admin)))
             .RequireRateLimiting("GeneralPolicy");
 
+        //---------------------------- Configuración ------------------------------------//
+
         group.MapGet("/{id:guid}",
                 async (Guid id, IGameRepository repository, HttpContext context, CancellationToken ct) =>
                 {
@@ -104,8 +106,86 @@ public static class GameEndpoints
                     return Results.Ok(response.Value);
                 })
             .WithSummary("Actualiza una partida")
-            .WithDescription("Actualiza los datos de una partida específica.")
+            .WithDescription("Actualiza la configuración de la partida de una partida específica.")
             .Produces<GameResponseDto>(200)
+            .ProducesProblem(400)
+            .ProducesProblem(401)
+            .ProducesProblem(404);
+
+        //---------------------------- Join ------------------------------------//
+
+        group.MapPost("/join",
+                async (JoinGameRequestDto dto, IValidator<JoinGameRequestDto> validator, IGameService service,
+                    CancellationToken ct) =>
+                {
+                    var validationResult = await validator.ValidateAsync(dto, ct);
+                    if (!validationResult.IsValid) return ProblemResults.Validation(validationResult.ToDictionary());
+
+                    var response = await service.JoinGameAsync(dto, ct);
+                    if (response.IsFailure)
+                        return response.Error?.Code is "Game.InvalidCode" or "Game.InvalidPassword"
+                            ? ProblemResults.Unauthorized(response.Error.Message) // 401 para credenciales malas
+                            : ProblemResults.BadRequest(response.Error.Message); // 400 para juego lleno/terminado
+
+                    return Results.Ok(response.Value);
+                })
+            .WithSummary("Unirse a un Partida")
+            .Produces<JoinGameResponseDto>(200)
+            .ProducesProblem(400)
+            .ProducesProblem(401)
+            .AllowAnonymous();
+
+        group.MapPost("/players/Leave", async (LeaveGameRequestDto dto, IGameService service, CancellationToken ct) =>
+            {
+                var response = await service.LeaveGameAsync(dto, ct);
+                return response.IsFailure
+                    ? ProblemResults.BadRequest(response.Error.Message)
+                    : Results.Ok(new { Message = "Has salido de la partida exitosamente." });
+            })
+            .WithSummary("Salirse de una partida")
+            .Produces(200)
+            .ProducesProblem(400)
+            .AllowAnonymous();
+
+        group.MapDelete("/{gameId:guid}/players/{playerId:guid}",
+                async (Guid gameId, Guid playerId, IGameService service, HttpContext context, CancellationToken ct) =>
+                {
+                    if (!context.User.TryGetUserId(out var userId))
+                        return ProblemResults.Unauthorized();
+                    var dto = new LeaveGameRequestDto(gameId, playerId);
+                    var response = await service.KickPlayerAsync(dto, ct);
+                    if (response.IsFailure)
+                        return response.Error?.Code == "Game.NotFound"
+                            ? ProblemResults.NotFound(response.Error.Message)
+                            : ProblemResults.BadRequest(response.Error.Message);
+
+                    return Results.NoContent();
+                })
+            .WithSummary("Echar a un jugador de la partida (Solo Admin)")
+            .Produces(204)
+            .ProducesProblem(400)
+            .ProducesProblem(401)
+            .ProducesProblem(404);
+
+        group.MapGet("/{id:guid}/players",
+                async (Guid id, IGameService service, HttpContext context, CancellationToken ct) =>
+                {
+                    if (!context.User.TryGetUserId(out var userId))
+                        return ProblemResults.Unauthorized();
+                    var response = await service.GetPlayersAsync(id, userId, ct);
+                    if (response.IsFailure)
+                    {
+                        return response.Error?.Code == "Game.NotFound"
+                            ? ProblemResults.NotFound(response.Error.Message)
+                            : ProblemResults.BadRequest(response.Error.Message);
+                    }
+
+                    return Results.Ok(response.Value);
+                })
+            .WithSummary("Obtener lista de jugadores de la partida")
+            .WithDescription(
+                "Devuelve el nombre y código de cartón de todos los jugadores que se han unido a la partida.")
+            .Produces<GamePlayersResponseDto>(200)
             .ProducesProblem(400)
             .ProducesProblem(401)
             .ProducesProblem(404);

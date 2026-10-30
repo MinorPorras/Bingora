@@ -70,6 +70,9 @@ public class Card
         PlayerId = playerId;
     }
 
+    public void UnassignPlayer() => PlayerId = null;
+
+
     public void UpdateQrPath(string qrCodePath)
     {
         if (string.IsNullOrWhiteSpace(qrCodePath))

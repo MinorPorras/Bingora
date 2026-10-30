@@ -8,4 +8,8 @@ public interface IGameRepository
     Task UpdateAsync(Game game, CancellationToken ct = default);
     Task<Game?> GetByIdWithDetailsAsync(Guid id, Guid ownerId, CancellationToken ct = default);
     Task<Game?> GetByIdAsync(Guid id, Guid ownerId, CancellationToken ct = default);
+    Task<Game?> GetByCodeAsync(string code, CancellationToken ct = default);
+    Task<Player?> GetPlayerByIdAsync(Guid gameId, Guid playerId, CancellationToken ct = default);
+    Task<Player?> GetPlayerWithGameAsync(Guid gameId, Guid playerId, CancellationToken ct = default);
+    Task<Game?> GetByIdForManagementAsync(Guid gameId, CancellationToken ct = default);
 }
