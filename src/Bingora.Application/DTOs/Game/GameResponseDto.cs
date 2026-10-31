@@ -3,6 +3,7 @@
 public record GameResponseDto(
     Guid Id,
     Guid BingoId,
+    string GameCode,
     string Title,
     string Status,
     DateTime CreatedAt,

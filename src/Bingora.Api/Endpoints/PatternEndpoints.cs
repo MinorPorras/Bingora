@@ -8,6 +8,7 @@ using Bingora.Domain.Entities;
 using Bingora.Domain.Enums;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Bingora.Api.Endpoints;
 
@@ -20,7 +21,8 @@ public static class PatternEndpoints
             .RequireRateLimiting("GeneralPolicy");
 
         group.MapGet("/",
-                async ([AsParameters] PaginatedQuery query, HttpContext context, IPatternRepository repository,
+                async ([AsParameters] PaginatedQuery query, HttpContext context,
+                    [FromServices] IPatternRepository repository,
                     CancellationToken ct) =>
                 {
                     var paged = await repository.GetAllPagedAsync(query.PageNumber, query.PageSize, ct);
@@ -33,7 +35,7 @@ public static class PatternEndpoints
 
         group.MapGet("/search/{name}",
                 async ([AsParameters] PaginatedQuery query, string name, HttpContext context,
-                    IPatternRepository repository,
+                    [FromServices] IPatternRepository repository,
                     CancellationToken ct) =>
                 {
                     var paged = await repository.GetByNamePagedAsync(query.PageNumber, query.PageSize, name, ct);
@@ -99,7 +101,7 @@ public static class PatternEndpoints
         group.MapPatch("/{id:guid}/restore",
                 async (Guid id, HttpContext context, IPatternRepository repository, CancellationToken ct) =>
                 {
-                    var pattern = await repository.GetByIdAsync(id, ct);
+                    var pattern = await repository.GetByIdAsyncIgnoringFilters(id, ct);
                     if (pattern is null) return ProblemResults.NotFound("No se encontró el patrón a activar");
                     pattern.Restore();
                     await repository.UpdateAsync(pattern, ct);

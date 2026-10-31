@@ -11,6 +11,9 @@ public class UserRepository(AppDbContext context) : IUserRepository
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default(CancellationToken)) =>
         await context.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
 
+    public async Task<User?> GetByIdAsyncIgnoringQueryFilters(Guid id, CancellationToken ct = default) =>
+        await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == id, ct);
+
     public async Task<PaginatedResult<User>> GetPagedAsync(int pageNumber, int pageSize,
         CancellationToken ct = default(CancellationToken))
     {

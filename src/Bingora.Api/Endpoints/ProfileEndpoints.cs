@@ -5,6 +5,7 @@ using Bingora.Application.Interfaces;
 using Bingora.Application.Mappings;
 using Bingora.Domain.Enums;
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Bingora.Api.Endpoints;
 
@@ -17,7 +18,7 @@ public static class ProfileEndpoints
             .RequireAuthorization(policy => policy.RequireRole(nameof(Role.Admin), nameof(Role.User)))
             .RequireRateLimiting("GeneralPolicy");
 
-        group.MapGet("/me", async (HttpContext context, IUserRepository userRepository, CancellationToken ct) =>
+        group.MapGet("/me", async (HttpContext context, [FromServices] IUserRepository userRepository, CancellationToken ct) =>
             {
                 if (!context.User.TryGetUserId(out var userId)) return Results.Unauthorized();
                 var user = await userRepository.GetByIdAsync(userId, ct);
@@ -32,9 +33,9 @@ public static class ProfileEndpoints
 
         group.MapPatch("/me", async (
                 UpdateUsernameRequestDto dto,
-                IValidator<UpdateUsernameRequestDto> validator,
+                [FromServices] IValidator<UpdateUsernameRequestDto> validator,
                 HttpContext httpContext,
-                IUserRepository userRepository,
+                [FromServices] IUserRepository userRepository,
                 CancellationToken ct) =>
             {
                 var validation = await validator.ValidateAsync(dto, ct);
@@ -62,10 +63,10 @@ public static class ProfileEndpoints
 
         group.MapPost("/me/change-password", async (
                 ChangePasswordRequestDto dto,
-                IValidator<ChangePasswordRequestDto> validator,
+                [FromServices] IValidator<ChangePasswordRequestDto> validator,
                 HttpContext httpContext,
-                IUserRepository userRepository,
-                IRefreshTokenRepository refreshTokens,
+                [FromServices] IUserRepository userRepository,
+                [FromServices] IRefreshTokenRepository refreshTokens,
                 CancellationToken ct) =>
             {
                 var validation = await validator.ValidateAsync(dto, ct);

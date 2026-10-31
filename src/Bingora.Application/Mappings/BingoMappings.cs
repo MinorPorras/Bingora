@@ -15,19 +15,30 @@ public static class BingoMappings
         );
     }
 
-    public static BingoResponseDto ToResponseDto(this Bingo bingo)
-    {
-        return new BingoResponseDto(
-            bingo.Id,
-            bingo.Name,
-            bingo.Description,
-            bingo.TotalCards,
-            bingo.CreatedAt,
-            bingo.OwnerId,
-            bingo.ColumnRanges.Select(cr => cr.ToDto()).ToList(),
-            bingo.IsActive
-        );
-    }
+    public static BingoSummaryDto ToSummaryDto(this Bingo bingo) => new(
+        bingo.Id,
+        bingo.Name,
+        bingo.Description,
+        bingo.TotalCards,
+        bingo.CreatedAt,
+        bingo.IsActive
+    );
+
+    public static BingoDetailDto ToDetailDto(this Bingo bingo) => new(
+        bingo.Id,
+        bingo.Name,
+        bingo.Description,
+        bingo.TotalCards,
+        bingo.CreatedAt,
+        bingo.IsActive,
+        [
+            .. bingo.BingoPatterns.Select(bp => new BingoPatternDto(
+                bp.PatternId,
+                bp.Pattern.Name,
+                bp.AvailablePrizes
+            ))
+        ]
+    );
 
     public static PatternManagementResponseDto ToResponseDto(this BingoPattern bingoPattern)
     {

@@ -88,6 +88,7 @@ public static class ServiceCollectionExtensions
         public void AddServices()
         {
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IGameService, GameService>();
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         }
 
@@ -96,6 +97,8 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IPatternRepository, PatternRepository>();
+            services.AddScoped<IBingoRepository, BingoRepository>();
+            services.AddScoped<IGameRepository, GameRepository>();
         }
 
         public void AddProblemDetailsStandarization()

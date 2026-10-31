@@ -136,32 +136,40 @@ public class Game
         _gamePatterns.Add(gamePattern);
     }
 
-    public void GenerateCards(int quantity, Func<string> generateCardValuesFunc)
+    /// <summary>
+    /// Genera una lista de nuevos cartones válidos para esta partida, 
+    /// sin persistirlos aún en la base de datos.
+    /// </summary>
+    public IEnumerable<Card> GenerateCards(int quantity, Func<string> generateCardValuesFunc)
     {
         if (quantity <= 0)
             throw new ArgumentException("La cantidad de cartones debe ser mayor a 0.", nameof(quantity));
 
         if (Status == GameStatus.Finished)
             throw new ArgumentException("No se pueden generar nuevos cartones para una partida ya finalizada.");
-
+        var cards = new List<Card>();
         for (var i = 0; i < quantity; i++)
         {
             var cardCode = GenerateUniqueCardCode();
             var values = generateCardValuesFunc();
             var newCard = Card.Create(BingoId, Id, cardCode, values, 0);
-            _cards.Add(newCard);
+            cards.Add(newCard);
         }
+
+        return cards;
     }
 
-    public void AddPlayer(string playerName, Card assignedCard)
+    public Player AddPlayer(string playerName, Card assignedCard)
     {
-        if (Status != GameStatus.Finished)
+        if (Status == GameStatus.Finished)
             throw new InvalidOperationException("No se puede agregar jugadores a un juego ya finalizado.");
         if (_players.Any(p => p.Name.Equals(playerName, StringComparison.InvariantCultureIgnoreCase)))
             throw new InvalidOperationException("Ya existe un jugador con ese nombre en la partida.");
+        if (assignedCard.Player != null)
+            throw new InvalidOperationException("Este cartón ya está asignado a otro jugador.");
         var player = Player.Create(this.Id, assignedCard.Id, playerName);
         _players.Add(player);
-        assignedCard.AssignPlayer(player.Id);
+        return player;
     }
 
     public void RemovePlayer(Guid playerId)
@@ -170,8 +178,6 @@ public class Game
         if (player is null)
             throw new InvalidOperationException("El jugador no se encuentra en la partida");
         _players.Remove(player);
-        var card = _cards.FirstOrDefault(c => c.Id == player.CardId);
-        card?.UnassignPlayer();
     }
 
     // Helper

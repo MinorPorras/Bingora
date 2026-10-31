@@ -13,11 +13,9 @@ public class GameRepository(AppDbContext context) : IGameRepository
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task UpdateAsync(Game game, CancellationToken ct = default)
-    {
-        context.Games.Update(game);
+    public async Task UpdateAsync(Game game, CancellationToken ct = default) =>
         await context.SaveChangesAsync(ct);
-    }
+
 
     public async Task<Game?> GetByIdWithDetailsAsync(Guid id, Guid ownerId, CancellationToken ct = default) =>
         await context.Games
@@ -30,6 +28,7 @@ public class GameRepository(AppDbContext context) : IGameRepository
     public async Task<Game?> GetByIdAsync(Guid id, Guid ownerId, CancellationToken ct = default) =>
         await context.Games
             .Where(w => w.Id == id && w.Bingo.OwnerId == ownerId)
+            .Include(g => g.Cards)
             .FirstOrDefaultAsync(ct);
 
     public async Task<Game?> GetByCodeAsync(string code, CancellationToken ct = default) =>
@@ -48,4 +47,16 @@ public class GameRepository(AppDbContext context) : IGameRepository
         await context.Games.Include(g => g.Players)
             .Include(g => g.Cards)
             .FirstOrDefaultAsync(g => g.Id == gameId, ct);
+
+    public async Task AddCardsAsync(Guid gameId, IEnumerable<Card> cards, CancellationToken ct = default)
+    {
+        await context.Cards.AddRangeAsync(cards, ct);
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task AddPlayerAsync(Player player, CancellationToken ct = default)
+    {
+        await context.Players.AddAsync(player, ct);
+        await context.SaveChangesAsync(ct);
+    }
 }

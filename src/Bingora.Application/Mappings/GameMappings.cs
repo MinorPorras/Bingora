@@ -11,6 +11,7 @@ public static class GameMappings
     public static GameResponseDto ToResponseDto(this Game game) => new GameResponseDto(
         game.Id,
         game.BingoId,
+        game.GameCode,
         game.Title,
         game.Status.ToString(),
         game.CreatedAt,

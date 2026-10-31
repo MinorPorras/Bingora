@@ -12,4 +12,6 @@ public interface IGameRepository
     Task<Player?> GetPlayerByIdAsync(Guid gameId, Guid playerId, CancellationToken ct = default);
     Task<Player?> GetPlayerWithGameAsync(Guid gameId, Guid playerId, CancellationToken ct = default);
     Task<Game?> GetByIdForManagementAsync(Guid gameId, CancellationToken ct = default);
+    Task AddCardsAsync(Guid gameId, IEnumerable<Card> cards, CancellationToken ct = default);
+    Task AddPlayerAsync(Player player, CancellationToken ct = default);
 }

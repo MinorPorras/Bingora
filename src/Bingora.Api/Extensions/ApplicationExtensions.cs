@@ -34,6 +34,8 @@ public static class ApplicationExtensions
             app.MapUserManagementEndpoints();
             app.MapProfileEndpoints();
             app.MapPatternEndpoints();
+            app.MapBingoEndpoints();
+            app.MapGameEndpoints();
         }
     }
 }

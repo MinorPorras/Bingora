@@ -8,6 +8,7 @@ using Bingora.Application.Mappings;
 using Bingora.Domain.Common;
 using Bingora.Domain.Enums;
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Bingora.Api.Endpoints;
 
@@ -19,17 +20,19 @@ public static class UserManagementEndpoints
             .RequireAuthorization(policy => policy.RequireRole(nameof(Role.Admin)))
             .RequireRateLimiting("GeneralPolicy");
 
-        group.MapGet("/", async ([AsParameters] PaginatedQuery query, IUserRepository repository, CancellationToken ct) =>
-            {
-                var paged = await repository.GetPagedAsync(query.PageNumber, query.PageSize, ct);
-                return Results.Ok(paged.MapTo(u => u.ToResponseDto()));
-            })
+        group.MapGet("/",
+                async ([AsParameters] PaginatedQuery query, [FromServices] IUserRepository repository,
+                    CancellationToken ct) =>
+                {
+                    var paged = await repository.GetPagedAsync(query.PageNumber, query.PageSize, ct);
+                    return Results.Ok(paged.MapTo(u => u.ToResponseDto()));
+                })
             .WithSummary("Obtener todos los usuarios")
             .WithDescription(
                 "Permite a un administrador obtener un listado paginado de todos los usuarios del sistema.")
             .Produces<PaginatedResult<UserResponseDto>>(201);
 
-        group.MapGet("/{id:guid}", async (Guid id, IUserRepository repository, CancellationToken ct) =>
+        group.MapGet("/{id:guid}", async (Guid id, [FromServices] IUserRepository repository, CancellationToken ct) =>
             {
                 var user = await repository.GetByIdAsync(id, ct);
                 return user is null
@@ -42,8 +45,9 @@ public static class UserManagementEndpoints
             .ProducesProblem(404);
 
         group.MapPatch("/{id:Guid}",
-                async (Guid id, UpdateUsernameRequestDto dto, IValidator<UpdateUsernameRequestDto> validator,
-                    IUserRepository repository, CancellationToken ct) =>
+                async (Guid id, UpdateUsernameRequestDto dto,
+                    [FromServices] IValidator<UpdateUsernameRequestDto> validator,
+                    [FromServices] IUserRepository repository, CancellationToken ct) =>
                 {
                     var validation = await validator.ValidateAsync(dto, ct);
                     if (!validation.IsValid) return ProblemResults.Validation(validation.ToDictionary());
@@ -62,8 +66,8 @@ public static class UserManagementEndpoints
             .ProducesProblem(404);
 
         group.MapPatch("/{id:Guid}/email",
-                async (Guid id, UpdateEmailRequestDto dto, IValidator<UpdateEmailRequestDto> validator,
-                    IUserRepository repository, CancellationToken ct) =>
+                async (Guid id, UpdateEmailRequestDto dto, [FromServices] IValidator<UpdateEmailRequestDto> validator,
+                    [FromServices] IUserRepository repository, CancellationToken ct) =>
                 {
                     var validation = await validator.ValidateAsync(dto, ct);
                     if (!validation.IsValid) return ProblemResults.Validation(validation.ToDictionary());
@@ -88,9 +92,10 @@ public static class UserManagementEndpoints
             .ProducesProblem(404);
 
         group.MapPatch("/{id:Guid}/role",
-                async (Guid id, UpdateUserRoleRequestDto dto, IValidator<UpdateUserRoleRequestDto> validator,
+                async (Guid id, UpdateUserRoleRequestDto dto,
+                    [FromServices] IValidator<UpdateUserRoleRequestDto> validator,
                     HttpContext httpContext,
-                    IUserRepository repository, CancellationToken ct) =>
+                    [FromServices] IUserRepository repository, CancellationToken ct) =>
                 {
                     var validation = await validator.ValidateAsync(dto, ct);
                     if (!validation.IsValid) return ProblemResults.Validation(validation.ToDictionary());
@@ -112,23 +117,24 @@ public static class UserManagementEndpoints
             .ProducesProblem(404)
             .ProducesProblem(400);
 
-        group.MapPost("/{id:Guid}/restore", async (Guid id, IUserRepository repository, CancellationToken ct) =>
-            {
-                var user = await repository.GetByIdAsync(id, ct);
-                if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
+        group.MapPost("/{id:Guid}/restore",
+                async (Guid id, [FromServices] IUserRepository repository, CancellationToken ct) =>
+                {
+                    var user = await repository.GetByIdAsyncIgnoringQueryFilters(id, ct);
+                    if (user is null) return ProblemResults.NotFound("Usuario no encontrado.");
 
-                user.Restore();
-                await repository.UpdateAsync(user, ct);
-                return Results.NoContent();
-            })
+                    user.Restore();
+                    await repository.UpdateAsync(user, ct);
+                    return Results.NoContent();
+                })
             .WithSummary("ActivateUser")
             .WithDescription("Cambia el estado de un usuario a activo (Solo admin)")
             .Produces(204)
             .ProducesProblem(404);
 
         group.MapPost("/{id:Guid}/soft-delete",
-                async (Guid id, HttpContext httpContext, IUserRepository repository,
-                    IRefreshTokenRepository refreshTokenRepository, CancellationToken ct) =>
+                async (Guid id, HttpContext httpContext, [FromServices] IUserRepository repository,
+                    [FromServices] IRefreshTokenRepository refreshTokenRepository, CancellationToken ct) =>
                 {
                     //Si el usuario es el mismo no permite autodesactivarse
                     if (httpContext.User.TryGetUserId(out var callerId) && callerId == id)
@@ -151,7 +157,8 @@ public static class UserManagementEndpoints
             .ProducesProblem(404);
 
         group.MapPost("/{id:Guid}/reset-password",
-                async (Guid id, IUserRepository userRepository, IRefreshTokenRepository refreshTokenRepository,
+                async (Guid id, IUserRepository userRepository,
+                    [FromServices] IRefreshTokenRepository refreshTokenRepository,
                     CancellationToken ct) =>
                 {
                     var user = await userRepository.GetByIdAsync(id, ct);

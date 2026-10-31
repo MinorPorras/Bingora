@@ -6,7 +6,6 @@ public class Card
     public Guid BingoId { get; private set; }
     public Guid GameId { get; private set; }
     public string Code { get; private set; } = string.Empty;
-    public Guid? PlayerId { get; private set; }
     public string QrCodePath { get; private set; } = string.Empty;
     public string Values { get; private set; } = string.Empty; //Ej: "1,15,22..."
     public int Bitmask { get; private set; }
@@ -51,26 +50,12 @@ public class Card
             BingoId = bingoId,
             GameId = gameId,
             Code = code.Trim().ToUpper(),
-            PlayerId = null,
             Values = values,
             Bitmask = bitmask,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
     }
-
-    public void AssignPlayer(Guid playerId)
-    {
-        if (playerId == Guid.Empty)
-            throw new ArgumentException("El Id del jugador es obligatorio.", nameof(playerId));
-
-        if (PlayerId != null)
-            throw new InvalidOperationException("Este cartón ya está asignado a un jugador.");
-
-        PlayerId = playerId;
-    }
-
-    public void UnassignPlayer() => PlayerId = null;
 
 
     public void UpdateQrPath(string qrCodePath)

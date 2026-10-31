@@ -14,9 +14,9 @@ public static class AuthEndpoints
         var group = app.MapGroup("/api/auth").WithTags("Auth");
 
         group.MapPost("/register",
-                async (RegisterRequestDto dto,
-                    IValidator<RegisterRequestDto> validator,
-                    IAuthService authService,
+                async ([FromBody] RegisterRequestDto dto,
+                    [FromServices] IValidator<RegisterRequestDto> validator,
+                    [FromServices] IAuthService authService,
                     CancellationToken ct) =>
                 {
                     var validationResult = await validator.ValidateAsync(dto, ct);
@@ -39,9 +39,9 @@ public static class AuthEndpoints
 
 
         group.MapPost("/login",
-                async (LoginRequestDto dto,
-                    IValidator<LoginRequestDto> validator,
-                    IAuthService authService,
+                async ([FromBody] LoginRequestDto dto,
+                    [FromServices] IValidator<LoginRequestDto> validator,
+                    [FromServices] IAuthService authService,
                     CancellationToken ct) =>
                 {
                     var validationResult = await validator.ValidateAsync(dto, ct);
@@ -63,8 +63,8 @@ public static class AuthEndpoints
             .RequireRateLimiting("AuthPolicy");
 
         group.MapPost("/refresh",
-                async (RefreshTokenRequestDto dto,
-                    IAuthService service,
+                async ([FromBody] RefreshTokenRequestDto dto,
+                    [FromServices] IAuthService service,
                     CancellationToken ct) =>
                 {
                     var result = await service.RefreshTokenAsync(dto.RefreshToken, ct);
@@ -79,7 +79,8 @@ public static class AuthEndpoints
             .RequireRateLimiting("GeneralPolicy");
 
         group.MapPost("/logout",
-                async (RefreshTokenRequestDto dto, IAuthService service, CancellationToken ct) =>
+                async ([FromBody] RefreshTokenRequestDto dto, [FromServices] IAuthService service,
+                    CancellationToken ct) =>
                 {
                     var result = await service.LogoutAsync(dto.RefreshToken, ct);
                     return result.IsSuccess

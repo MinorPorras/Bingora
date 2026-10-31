@@ -16,7 +16,7 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
     {
         var bingo = await bingoRepository.GetByIdAsync(dto.BingoId, ownerId, ct);
         if (bingo is null) return Result<GameResponseDto>.Failure(BingoErrors.NotFound);
-        var game = Game.Create(dto.BingoId, dto.Title, dto.AnimationDuration, dto.WinnerSoundPath);
+        var game = Game.Create(dto.BingoId, dto.Title, dto.AnimationDuration, dto.WinnerSoundPath, dto.AccessPassWord);
         foreach (var pattern in bingo.BingoPatterns)
             game.AddPattern(pattern.PatternId, pattern.AvailablePrizes);
 
@@ -52,14 +52,10 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
 
         Func<string> generateValuesFunc = () => BingoCardValueGenerator.GenerateValues(bingo.ColumnRanges);
 
-        game.GenerateCards(quantity, generateValuesFunc);
+        var newCards = game.GenerateCards(quantity, generateValuesFunc).ToList();
+        await gameRepository.AddCardsAsync(gameId, newCards, ct);
 
-        await gameRepository.UpdateAsync(game, ct);
-        var newCodes = game.Cards
-            .OrderByDescending(c => c.CreatedAt)
-            .Take(quantity)
-            .Select(c => c.Code)
-            .ToList();
+        var newCodes = newCards.Select(c => c.Code).ToList();
         return Result<GeneratedCardsResponseDto>.Success(new GeneratedCardsResponseDto(quantity, newCodes));
     }
 
@@ -71,14 +67,14 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
             return Result<JoinGameResponseDto>.Failure(GameErrors.InvalidPassword);
         if (game.Status == GameStatus.Finished)
             return Result<JoinGameResponseDto>.Failure(GameErrors.GameFinished);
-        var availableCard = game.Cards.FirstOrDefault(c => c.PlayerId == null);
+        var availableCard = game.Cards.FirstOrDefault(c => c.Player == null);
         if (availableCard is null)
             return Result<JoinGameResponseDto>.Failure(GameErrors.NoCardsAvailable);
-        game.AddPlayer(dto.PlayerName, availableCard);
-        await gameRepository.UpdateAsync(game, ct);
+        var newPlayer = game.AddPlayer(dto.PlayerName, availableCard);
+        await gameRepository.AddPlayerAsync(newPlayer, ct);
 
         return Result<JoinGameResponseDto>.Success(new JoinGameResponseDto(
-            availableCard.PlayerId!.Value,
+            newPlayer.Id,
             dto.PlayerName,
             availableCard.Code,
             game.Title)
@@ -102,13 +98,10 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
         if (card is null)
             return Result<JoinGameResponseDto>.Failure(CardErrors.NotFound);
 
-        if (card.PlayerId != null)
-            return Result<JoinGameResponseDto>.Failure(CardErrors.AlreadyAssigned);
-
-        game.AddPlayer(dto.PlayerName, card);
-        await gameRepository.UpdateAsync(game, ct);
+        var newPlayer = game.AddPlayer(dto.PlayerName, card);
+        await gameRepository.AddPlayerAsync(newPlayer, ct);
         return Result<JoinGameResponseDto>.Success(new JoinGameResponseDto(
-            card.PlayerId!.Value,
+            newPlayer.Id,
             dto.PlayerName,
             card.Code,
             game.Title)

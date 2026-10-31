@@ -12,8 +12,8 @@ public class Bingo
     public DateTime CreatedAt { get; private set; }
     public bool IsActive { get; private set; }
 
-    public IReadOnlyList<ColumnRange> ColumnRanges { get; private set; } = [];
-
+    private List<ColumnRange> _columnRanges = new();
+    public IReadOnlyList<ColumnRange> ColumnRanges => _columnRanges.AsReadOnly();
     public User Owner { get; private set; } = null!;
     public IReadOnlyList<BingoPattern> BingoPatterns => _bingoPatterns.AsReadOnly();
     private readonly List<BingoPattern> _bingoPatterns = [];
@@ -24,6 +24,19 @@ public class Bingo
 
     private Bingo()
     {
+    }
+
+    private Bingo(string name, string description, int totalCards, Guid ownerId,
+        IReadOnlyList<ColumnRange> columnRanges)
+    {
+        Id = Guid.NewGuid();
+        Name = name.Trim();
+        Description = description?.Trim() ?? string.Empty;
+        TotalCards = totalCards;
+        OwnerId = ownerId;
+        CreatedAt = DateTime.UtcNow;
+        IsActive = true;
+        _columnRanges = new List<ColumnRange>(columnRanges);
     }
 
     public void SoftDelete()
@@ -54,17 +67,7 @@ public class Bingo
         IReadOnlyList<ColumnRange> columnRanges)
     {
         Validate(name, totalCards, columnRanges);
-        return new Bingo
-        {
-            Id = Guid.NewGuid(),
-            Name = name.Trim(),
-            Description = description?.Trim() ?? string.Empty,
-            TotalCards = totalCards,
-            OwnerId = ownerId,
-            CreatedAt = DateTime.UtcNow,
-            IsActive = true,
-            ColumnRanges = [.. columnRanges]
-        };
+        return new Bingo(name, description, totalCards, ownerId, columnRanges);
     }
 
     public void UpdateConfiguration(string name, string description, int totalCards,
@@ -74,7 +77,8 @@ public class Bingo
         Name = name.Trim();
         Description = description?.Trim() ?? string.Empty;
         TotalCards = totalCards;
-        ColumnRanges = [.. columnRanges];
+        _columnRanges.Clear();
+        _columnRanges.AddRange(columnRanges);
     }
 
     public void AddPattern(Guid patternId, int availablePrizes)

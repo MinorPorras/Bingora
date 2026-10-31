@@ -5,6 +5,7 @@ using Bingora.Application.Interfaces;
 using Bingora.Application.Mappings;
 using Bingora.Domain.Enums;
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Bingora.Api.Endpoints;
 
@@ -19,7 +20,7 @@ public static class GameEndpoints
         //---------------------------- Configuración ------------------------------------//
 
         group.MapGet("/{id:guid}",
-                async (Guid id, IGameRepository repository, HttpContext context, CancellationToken ct) =>
+                async (Guid id, [FromServices] IGameRepository repository, HttpContext context, CancellationToken ct) =>
                 {
                     if (!context.User.TryGetUserId(out var userId))
                         return ProblemResults.Unauthorized();
@@ -35,8 +36,9 @@ public static class GameEndpoints
             .ProducesProblem(404);
 
         group.MapPost("/",
-                async (CreateOrUpdateGameRequestDto dto, IValidator<CreateOrUpdateGameRequestDto> validator,
-                    IGameService service,
+                async ([FromBody] CreateOrUpdateGameRequestDto dto,
+                    [FromServices] IValidator<CreateOrUpdateGameRequestDto> validator,
+                    [FromServices] IGameService service,
                     HttpContext context, CancellationToken ct) =>
                 {
                     var validationResult = await validator.ValidateAsync(dto, ct);
@@ -64,7 +66,8 @@ public static class GameEndpoints
             .ProducesProblem(404);
 
         group.MapPost("/{id:guid}/cards",
-                async (Guid id, GenerateCardsRequestDto dto, IGameService service, HttpContext context,
+                async (Guid id, [FromBody] GenerateCardsRequestDto dto, [FromServices] IGameService service,
+                    HttpContext context,
                     CancellationToken ct) =>
                 {
                     if (!context.User.TryGetUserId(out var userId))
@@ -88,8 +91,9 @@ public static class GameEndpoints
             .ProducesProblem(404);
 
         group.MapPut("/{id:guid}",
-                async (Guid id, CreateOrUpdateGameRequestDto dto, IValidator<CreateOrUpdateGameRequestDto> validator,
-                    IGameService service, HttpContext context, CancellationToken ct) =>
+                async (Guid id, [FromBody] CreateOrUpdateGameRequestDto dto,
+                    [FromServices] IValidator<CreateOrUpdateGameRequestDto> validator,
+                    [FromServices] IGameService service, HttpContext context, CancellationToken ct) =>
                 {
                     var validationResult = await validator.ValidateAsync(dto, ct);
                     if (!validationResult.IsValid) return ProblemResults.Validation(validationResult.ToDictionary());
@@ -115,7 +119,8 @@ public static class GameEndpoints
         //---------------------------- Join ------------------------------------//
 
         group.MapPost("/join",
-                async (JoinGameRequestDto dto, IValidator<JoinGameRequestDto> validator, IGameService service,
+                async ([FromBody] JoinGameRequestDto dto, [FromServices] IValidator<JoinGameRequestDto> validator,
+                    [FromServices] IGameService service,
                     CancellationToken ct) =>
                 {
                     var validationResult = await validator.ValidateAsync(dto, ct);
@@ -135,20 +140,22 @@ public static class GameEndpoints
             .ProducesProblem(401)
             .AllowAnonymous();
 
-        group.MapPost("/players/Leave", async (LeaveGameRequestDto dto, IGameService service, CancellationToken ct) =>
-            {
-                var response = await service.LeaveGameAsync(dto, ct);
-                return response.IsFailure
-                    ? ProblemResults.BadRequest(response.Error.Message)
-                    : Results.Ok(new { Message = "Has salido de la partida exitosamente." });
-            })
+        group.MapPost("/players/Leave",
+                async ([FromBody] LeaveGameRequestDto dto, [FromServices] IGameService service, CancellationToken ct) =>
+                {
+                    var response = await service.LeaveGameAsync(dto, ct);
+                    return response.IsFailure
+                        ? ProblemResults.BadRequest(response.Error.Message)
+                        : Results.Ok(new { Message = "Has salido de la partida exitosamente." });
+                })
             .WithSummary("Salirse de una partida")
             .Produces(200)
             .ProducesProblem(400)
             .AllowAnonymous();
 
         group.MapDelete("/{gameId:guid}/players/{playerId:guid}",
-                async (Guid gameId, Guid playerId, IGameService service, HttpContext context, CancellationToken ct) =>
+                async (Guid gameId, Guid playerId, [FromServices] IGameService service, HttpContext context,
+                    CancellationToken ct) =>
                 {
                     if (!context.User.TryGetUserId(out var userId))
                         return ProblemResults.Unauthorized();
@@ -168,7 +175,7 @@ public static class GameEndpoints
             .ProducesProblem(404);
 
         group.MapGet("/{id:guid}/players",
-                async (Guid id, IGameService service, HttpContext context, CancellationToken ct) =>
+                async (Guid id, [FromServices] IGameService service, HttpContext context, CancellationToken ct) =>
                 {
                     if (!context.User.TryGetUserId(out var userId))
                         return ProblemResults.Unauthorized();

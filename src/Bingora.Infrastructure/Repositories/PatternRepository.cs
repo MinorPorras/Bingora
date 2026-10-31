@@ -11,6 +11,9 @@ public class PatternRepository(AppDbContext context) : IPatternRepository
     public async Task<Pattern?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await context.Patterns.FirstOrDefaultAsync(p => p.Id == id, ct);
 
+    public async Task<Pattern?> GetByIdAsyncIgnoringFilters(Guid id, CancellationToken ct = default) =>
+        await context.Patterns.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == id, ct);
+
     public async Task<PaginatedResult<Pattern>> GetAllPagedAsync(int pageNumber, int pageSize,
         CancellationToken ct = default)
     {
