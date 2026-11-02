@@ -68,7 +68,7 @@ public interface IGameService
     /// <param name="dto">DTO con el PlayerId del jugador a expulsar</param>
     /// <param name="ct"></param>
     /// <returns>Patrón Result simple</returns>
-    Task<Result> KickPlayerAsync(LeaveGameRequestDto dto, CancellationToken ct = default);
+    Task<Result> KickPlayerAsync(Guid gameId, Guid playerId, Guid userId, CancellationToken ct = default);
 
     /// <summary>
     /// Obtiene la información general de la partida previa a su inicio, incluido un listado de los jugadores

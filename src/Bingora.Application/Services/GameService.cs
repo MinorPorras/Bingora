@@ -125,15 +125,17 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
         return Result.Success();
     }
 
-    public async Task<Result> KickPlayerAsync(LeaveGameRequestDto dto,
+    public async Task<Result> KickPlayerAsync(Guid gameId, Guid playerId, Guid userId,
         CancellationToken ct = default)
     {
-        var game = await gameRepository.GetByIdForManagementAsync(dto.GameId, ct);
-        if (game is null) return Result.Failure(GameErrors.NotFound);
-        if (game.Players.All(p => p.Id != dto.PlayerId))
+        var game = await gameRepository.GetByIdForManagementAsync(gameId, ct);
+        if (game is null || game.Bingo.OwnerId != userId)
+            return Result.Failure(GameErrors.NotFound);
+
+        if (game.Players.All(p => p.Id != playerId))
             return Result.Failure(PlayerErrors.NotFound);
 
-        game.RemovePlayer(dto.PlayerId);
+        game.RemovePlayer(playerId);
         await gameRepository.UpdateAsync(game, ct);
 
         return Result.Success();
@@ -148,7 +150,7 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
         var playersDto = game.Players.Select(p => new PlayerInfoDto(
             p.Id,
             p.Name,
-            game.Cards.First(c => c.Id == p.CardId).Code // Sabemos que el CardId es válido
+            p.Card?.Code ?? "Sin cartón"
         )).ToList();
 
         return Result<GamePlayersResponseDto>.Success(new GamePlayersResponseDto(

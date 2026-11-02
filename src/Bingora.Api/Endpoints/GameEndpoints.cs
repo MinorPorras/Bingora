@@ -160,7 +160,7 @@ public static class GameEndpoints
                     if (!context.User.TryGetUserId(out var userId))
                         return ProblemResults.Unauthorized();
                     var dto = new LeaveGameRequestDto(gameId, playerId);
-                    var response = await service.KickPlayerAsync(dto, ct);
+                    var response = await service.KickPlayerAsync(gameId, playerId, userId, ct);
                     if (response.IsFailure)
                         return response.Error?.Code == "Game.NotFound"
                             ? ProblemResults.NotFound(response.Error.Message)
