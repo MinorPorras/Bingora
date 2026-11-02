@@ -140,6 +140,32 @@ public static class GameEndpoints
             .ProducesProblem(401)
             .AllowAnonymous();
 
+        group.MapPost("/join-with-card",
+                async ([FromBody] JoinWithCardRequestDto dto,
+                    [FromServices] IValidator<JoinWithCardRequestDto> validator,
+                    [FromServices] IGameService service,
+                    CancellationToken ct) =>
+                {
+                    var validationResult = await validator.ValidateAsync(dto, ct);
+                    if (!validationResult.IsValid)
+                        return ProblemResults.Validation(validationResult.ToDictionary());
+
+                    var response = await service.JoinGameWithCardAsync(dto, ct);
+
+                    if (response.IsFailure)
+                        return response.Error?.Code is "Game.InvalidCode" or "Game.InvalidPassword"
+                            ? ProblemResults.Unauthorized(response.Error.Message)
+                            : ProblemResults.BadRequest(response.Error.Message);
+
+                    return Results.Ok(response.Value);
+                })
+            .WithSummary("Unirse a una partida con un cartón específico (vía QR)")
+            .WithDescription("Permite a un jugador unirse escaneando el QR de un cartón pre-asignado.")
+            .Produces<JoinGameResponseDto>(200)
+            .ProducesProblem(400)
+            .ProducesProblem(401)
+            .AllowAnonymous();
+
         group.MapPost("/players/Leave",
                 async ([FromBody] LeaveGameRequestDto dto, [FromServices] IGameService service, CancellationToken ct) =>
                 {

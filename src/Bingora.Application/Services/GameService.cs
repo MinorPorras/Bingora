@@ -9,7 +9,8 @@ using Bingora.Domain.Errors;
 
 namespace Bingora.Application.Services;
 
-public class GameService(IBingoRepository bingoRepository, IGameRepository gameRepository) : IGameService
+public class GameService(IBingoRepository bingoRepository, IGameRepository gameRepository, IQrCodeService qrCodeService)
+    : IGameService
 {
     public async Task<Result<GameResponseDto>> CreateGameAsync(Guid ownerId, CreateOrUpdateGameRequestDto dto,
         CancellationToken ct = default)
@@ -51,12 +52,19 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
             return Result<GeneratedCardsResponseDto>.Failure(GameErrors.ExceededMaxCards(quantity, bingo.TotalCards));
 
         Func<string> generateValuesFunc = () => BingoCardValueGenerator.GenerateValues(bingo.ColumnRanges);
-
         var newCards = game.GenerateCards(quantity, generateValuesFunc).ToList();
+
+        var cardsWithQr = new List<CardInfoDto>();
+        foreach (var card in newCards)
+        {
+            var qrPath = await qrCodeService.GenerateCardQrAsync(game.GameCode, card.Code, gameId);
+            card.UpdateQrPath(qrPath);
+            cardsWithQr.Add(new CardInfoDto(card.Code, qrPath));
+        }
+
         await gameRepository.AddCardsAsync(gameId, newCards, ct);
 
-        var newCodes = newCards.Select(c => c.Code).ToList();
-        return Result<GeneratedCardsResponseDto>.Success(new GeneratedCardsResponseDto(quantity, newCodes));
+        return Result<GeneratedCardsResponseDto>.Success(new GeneratedCardsResponseDto(quantity, cardsWithQr));
     }
 
     public async Task<Result<JoinGameResponseDto>> JoinGameAsync(JoinGameRequestDto dto, CancellationToken ct = default)

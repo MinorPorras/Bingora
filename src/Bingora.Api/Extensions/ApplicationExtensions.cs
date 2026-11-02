@@ -22,6 +22,7 @@ public static class ApplicationExtensions
 
         public void UseMiddlewarePipeline()
         {
+            app.UseStaticFiles();
             app.UseHttpsRedirection();
             app.UseRateLimiter();
             app.UseAuthentication();

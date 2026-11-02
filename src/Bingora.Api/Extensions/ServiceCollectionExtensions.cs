@@ -90,6 +90,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IGameService, GameService>();
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+            services.AddScoped<IQrCodeService, QrCodeService>();
         }
 
         public void AddRepositories()
