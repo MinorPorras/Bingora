@@ -53,7 +53,7 @@ public class AuthService(
     public async Task<Result<AuthResponseDto>> LoginAsync(LoginRequestDto dto,
         CancellationToken ct = default(CancellationToken))
     {
-        var user = await userRepository.GetByEmailAsync(dto.Email, ct);
+        var user = await userRepository.GetByEmailOrUsernameAsync(dto.Input, ct);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash) || !user.IsActive)
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidCredentials);
         // Obtiene el nuevo par de JWT
@@ -88,6 +88,7 @@ public class AuthService(
             await refreshTokenRepository.UpdateAsync(storedToken, ct);
             return Result<AuthResponseDto>.Failure(UserErrors.InvalidOrExpiredRefreshToken);
         }
+
         // Si el usuario está inactivo lo revoca
         if (!storedToken.User.IsActive)
         {
@@ -95,6 +96,7 @@ public class AuthService(
             await refreshTokenRepository.UpdateAsync(storedToken, ct);
             return Result<AuthResponseDto>.Failure(UserErrors.InactiveUser);
         }
+
         // Si el token ya fue reemplazado por otro se activan medidas contra animalias
         if (storedToken.ReplacedByTokenId.HasValue)
         {

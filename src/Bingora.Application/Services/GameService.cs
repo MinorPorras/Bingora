@@ -106,6 +106,9 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
         if (card is null)
             return Result<JoinGameResponseDto>.Failure(CardErrors.NotFound);
 
+        if (card.Player is not null)
+            return Result<JoinGameResponseDto>.Failure(CardErrors.AlreadyAssigned);
+
         var newPlayer = game.AddPlayer(dto.PlayerName, card);
         await gameRepository.AddPlayerAsync(newPlayer, ct);
         return Result<JoinGameResponseDto>.Success(new JoinGameResponseDto(

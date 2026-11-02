@@ -34,6 +34,17 @@ public class UserRepository(AppDbContext context) : IUserRepository
     public async Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default(CancellationToken)) =>
         await context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == username, ct);
 
+    public async Task<User?> GetByEmailOrUsernameAsync(string input, CancellationToken ct = default)
+    {
+        var normalizedInput = input.ToLowerInvariant();
+        return await context.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u =>
+                    EF.Functions.ILike(u.Email, normalizedInput) ||
+                    EF.Functions.ILike(u.Username, normalizedInput),
+                ct);
+    }
+
+
     public async Task AddAsync(User newUser, CancellationToken ct = default(CancellationToken))
     {
         await context.Users.AddAsync(newUser, ct);

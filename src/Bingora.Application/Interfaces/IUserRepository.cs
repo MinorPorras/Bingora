@@ -10,6 +10,7 @@ public interface IUserRepository
 
     Task<User?> GetByEmailAsync(string email, CancellationToken ct = default);
     Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default);
+    Task<User?> GetByEmailOrUsernameAsync(string input, CancellationToken ct = default);
     Task<PaginatedResult<User>> GetPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default);
     Task AddAsync(User user, CancellationToken ct = default);
     Task UpdateAsync(User user, CancellationToken ct = default);

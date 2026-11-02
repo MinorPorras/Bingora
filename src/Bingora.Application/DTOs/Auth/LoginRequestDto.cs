@@ -1,6 +1,6 @@
 ﻿namespace Bingora.Application.DTOs.Auth;
 
 public record LoginRequestDto(
-    string Email,
+    string Input,
     string Password
 );
