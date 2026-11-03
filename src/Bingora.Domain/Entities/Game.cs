@@ -75,10 +75,10 @@ public class Game
         string? accessPassword = null)
     {
         Validate(title, animationDuration, accessPassword);
-        Title = title;
+        Title = title.Trim();
         AnimationDuration = animationDuration;
         WinnerSoundPath = winnerSoundPath;
-        AccessPassword = accessPassword;
+        AccessPassword = accessPassword?.Trim();
     }
 
     //Maquinas de estados
@@ -185,13 +185,6 @@ public class Game
     {
         if (string.IsNullOrWhiteSpace(AccessPassword)) return true;
         return AccessPassword.Equals(inputPassword?.Trim(), StringComparison.OrdinalIgnoreCase);
-    }
-
-    public void SetAccessPassword(string? newPassword)
-    {
-        if (!string.IsNullOrWhiteSpace(newPassword) && newPassword.Length > 10)
-            throw new ArgumentException("La contraseña no puede exceder los 10 caracteres.");
-        AccessPassword = newPassword?.Trim();
     }
 
     private static string GenerateUniqueCardCode()

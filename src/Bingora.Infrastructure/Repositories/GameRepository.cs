@@ -18,6 +18,9 @@ public class GameRepository(AppDbContext context) : IGameRepository
     public async Task UpdateAsync(Game game, CancellationToken ct = default) =>
         await context.SaveChangesAsync(ct);
 
+    public async Task<bool> ExistsAsync(Guid gameId, Guid ownerId, CancellationToken ct = default) =>
+        await context.Games.AnyAsync(g => g.Id == gameId && g.Bingo.OwnerId == ownerId, ct);
+
 
     public async Task<Game?> GetByIdWithDetailsAsync(Guid id, Guid ownerId, CancellationToken ct = default) =>
         await context.Games
@@ -39,8 +42,10 @@ public class GameRepository(AppDbContext context) : IGameRepository
             .Include(g => g.Players)
             .FirstOrDefaultAsync(g => g.GameCode == code, ct);
 
-    public async Task<Player?> GetPlayerByIdAsync(Guid gameId, Guid playerId, CancellationToken ct = default) =>
-        await context.Players.FirstOrDefaultAsync(p => p.Id == playerId && p.GameId == gameId, ct);
+    public async Task<Player?> GetPlayerByIdAsync(Guid gameId, Guid playerId, Guid ownerId,
+        CancellationToken ct = default) =>
+        await context.Players.Include(p => p.Card)
+            .FirstOrDefaultAsync(p => p.Id == playerId && p.Game.Bingo.OwnerId == ownerId && p.GameId == gameId, ct);
 
     public async Task<Player?> GetPlayerWithGameAsync(Guid gameId, Guid playerId, CancellationToken ct = default) =>
         await context.Players.Include(p => p.Game).FirstOrDefaultAsync(p => p.Id == playerId && p.GameId == gameId, ct);
@@ -67,6 +72,22 @@ public class GameRepository(AppDbContext context) : IGameRepository
         var total = await query.CountAsync(ct);
         var items = await query.Skip((page - 1) * size).Take(size).ToListAsync(ct);
         return new PaginatedResult<Game>(items, page, total, size);
+    }
+
+    public async Task<PaginatedResult<Card>> GetCardsPagedAsync(Guid gameId, Guid ownerId, int pageNumber, int pageSize,
+        CancellationToken ct = default)
+    {
+        var page = Math.Max(1, pageNumber);
+        var size = Math.Clamp(pageSize, 1, 100);
+
+        var query = context.Cards.AsNoTracking()
+            .Where(c => c.GameId == gameId && c.Game.Bingo.OwnerId == ownerId) // ✅ Data isolation
+            .OrderByDescending(c => c.CreatedAt)
+            .ThenBy(c => c.Id);
+
+        var total = await query.CountAsync(ct);
+        var items = await query.Skip((page - 1) * size).Take(size).ToListAsync(ct);
+        return new PaginatedResult<Card>(items, page, total, size);
     }
 
 

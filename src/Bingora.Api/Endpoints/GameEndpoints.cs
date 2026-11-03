@@ -4,6 +4,7 @@ using Bingora.Application.DTOs.Common;
 using Bingora.Application.DTOs.Game;
 using Bingora.Application.Interfaces;
 using Bingora.Application.Mappings;
+using Bingora.Domain.Common;
 using Bingora.Domain.Enums;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -47,6 +48,42 @@ public static class GameEndpoints
                 return Results.Ok(pagedResult.MapTo(g => g.ToResponseDto()));
             });
 
+        group.MapGet("/{gameId:guid}/players/{playerId:guid}",
+                async (Guid gameId, Guid playerId, HttpContext context, IGameRepository repository,
+                    CancellationToken ct) =>
+                {
+                    if (!context.User.TryGetUserId(out var userId))
+                        return ProblemResults.Unauthorized();
+
+                    var player = await repository.GetPlayerByIdAsync(gameId, playerId, userId, ct);
+                    return player is null
+                        ? ProblemResults.NotFound("El jugador no existe")
+                        : Results.Ok(new PlayerInfoDto(player.Id, player.Name, player.Card?.Code ?? "Sin cartón"));
+                })
+            .WithSummary("Obtener jugador por ID")
+            .Produces<PlayerInfoDto>(200)
+            .ProducesProblem(401)
+            .ProducesProblem(404);
+
+        group.MapGet("/{gameId:guid}/cards", async ([AsParameters] PaginatedQuery query, Guid gameId,
+                HttpContext context, IGameRepository repository, CancellationToken ct) =>
+            {
+                if (!context.User.TryGetUserId(out var userId))
+                    return ProblemResults.Unauthorized();
+
+                if (!await repository.ExistsAsync(gameId, userId, ct))
+                    return ProblemResults.NotFound("La partida no existe");
+
+                var pagedResult =
+                    await repository.GetCardsPagedAsync(gameId, userId, query.PageNumber, query.PageSize, ct);
+                return Results.Ok(pagedResult.MapTo(c => new CardSummaryDto(
+                    c.Id, c.Code, c.QrCodePath, c.Player != null, c.CreatedAt)));
+            })
+            .WithSummary("Listar cartones de una partida (paginado)")
+            .Produces<PaginatedResult<CardSummaryDto>>(200)
+            .ProducesProblem(401)
+            .ProducesProblem(404);
+
         group.MapPost("/",
                 async ([FromBody] CreateOrUpdateGameRequestDto dto,
                     [FromServices] IValidator<CreateOrUpdateGameRequestDto> validator,
@@ -77,7 +114,7 @@ public static class GameEndpoints
             .ProducesProblem(401)
             .ProducesProblem(404);
 
-        group.MapPost("/{id:guid}/cards",
+        group.MapPost("/{id:guid}/cards/generate",
                 async (Guid id, [FromBody] GenerateCardsRequestDto dto, [FromServices] IGameService service,
                     HttpContext context,
                     CancellationToken ct) =>

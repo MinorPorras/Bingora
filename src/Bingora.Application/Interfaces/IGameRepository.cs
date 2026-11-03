@@ -7,15 +7,19 @@ public interface IGameRepository
 {
     Task AddAsync(Game game, CancellationToken ct = default);
     Task UpdateAsync(Game game, CancellationToken ct = default);
+    Task<bool> ExistsAsync(Guid gameId, Guid ownerId, CancellationToken ct = default);
     Task<Game?> GetByIdWithDetailsAsync(Guid id, Guid ownerId, CancellationToken ct = default);
     Task<Game?> GetByIdAsync(Guid id, Guid ownerId, CancellationToken ct = default);
     Task<Game?> GetByCodeAsync(string code, CancellationToken ct = default);
-    Task<Player?> GetPlayerByIdAsync(Guid gameId, Guid playerId, CancellationToken ct = default);
+    Task<Player?> GetPlayerByIdAsync(Guid gameId, Guid playerId, Guid ownerId, CancellationToken ct = default);
     Task<Player?> GetPlayerWithGameAsync(Guid gameId, Guid playerId, CancellationToken ct = default);
     Task<Game?> GetByIdForManagementAsync(Guid gameId, CancellationToken ct = default);
 
     public Task<PaginatedResult<Game>> GetPagedByTitleAsync(Guid ownerId, string searchTerm, int pageNumber,
         int pageSize, CancellationToken ct = default);
+
+    public Task<PaginatedResult<Card>> GetCardsPagedAsync(Guid gameId, Guid ownerId, int pageNumber, int pageSize,
+        CancellationToken ct = default);
 
     Task AddCardsAsync(Guid gameId, IEnumerable<Card> cards, CancellationToken ct = default);
     Task AddPlayerAsync(Player player, CancellationToken ct = default);
