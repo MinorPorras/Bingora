@@ -10,7 +10,7 @@ public interface IPatternRepository
 
     Task<PaginatedResult<Pattern>> GetAllPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default);
 
-    Task<PaginatedResult<Pattern>> GetByNamePagedAsync(int pageNumber, int pageSize, string patternName,
+    Task<PaginatedResult<Pattern>> GetByNamePagedAsync(Guid ownerId, int pageNumber, int pageSize, string patternName,
         CancellationToken ct = default);
 
     Task AddAsync(Pattern pattern, CancellationToken ct = default);

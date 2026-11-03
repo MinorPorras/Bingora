@@ -32,6 +32,20 @@ public static class UserManagementEndpoints
                 "Permite a un administrador obtener un listado paginado de todos los usuarios del sistema.")
             .Produces<PaginatedResult<UserResponseDto>>(201);
 
+        group.MapGet("/search/{input}",
+                async ([AsParameters] PaginatedQuery query, string input,
+                    [FromServices] IUserRepository repository,
+                    CancellationToken ct) =>
+                {
+                    var paged = await repository.GetPagedByUsernameOrEmailAsync(query.PageNumber, query.PageSize, input,
+                        ct);
+                    return Results.Ok(paged.MapTo(u => u.ToResponseDto()));
+                })
+            .WithSummary("Obtener todos los usuarios")
+            .WithDescription(
+                "Permite a un administrador obtener un listado paginado de todos los usuarios del sistema.")
+            .Produces<PaginatedResult<UserResponseDto>>(201);
+
         group.MapGet("/{id:guid}", async (Guid id, [FromServices] IUserRepository repository, CancellationToken ct) =>
             {
                 var user = await repository.GetByIdAsync(id, ct);

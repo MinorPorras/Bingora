@@ -59,14 +59,20 @@ namespace Bingora.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("total_cards");
 
+                    b.Property<string>("name_normalized")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasColumnName("name_normalized")
+                        .HasComputedColumnSql("LOWER(TRANSLATE(\"name\", 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU'))", true);
+
                     b.HasKey("Id")
                         .HasName("pk_bingo");
 
-                    b.HasIndex("Name")
-                        .HasDatabaseName("IX_bingo_name");
-
                     b.HasIndex("OwnerId")
                         .HasDatabaseName("ix_bingo_owner_id");
+
+                    b.HasIndex("name_normalized")
+                        .HasDatabaseName("IX_bingo_name_normalized");
 
                     b.ToTable("bingo", "bingo");
                 });
@@ -132,10 +138,6 @@ namespace Bingora.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
-
-                    b.Property<Guid?>("PlayerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("player_id");
 
                     b.Property<string>("QrCodePath")
                         .IsRequired()
@@ -259,6 +261,12 @@ namespace Bingora.Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("winner_sound_path");
 
+                    b.Property<string>("title_normalized")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasColumnName("title_normalized")
+                        .HasComputedColumnSql("LOWER(TRANSLATE(\"title\", 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU'))", true);
+
                     b.HasKey("Id")
                         .HasName("pk_game");
 
@@ -268,6 +276,9 @@ namespace Bingora.Infrastructure.Migrations
                     b.HasIndex("GameCode")
                         .IsUnique()
                         .HasDatabaseName("UQ_game_code");
+
+                    b.HasIndex("title_normalized")
+                        .HasDatabaseName("IX_game_title_normalized");
 
                     b.ToTable("game", "bingo");
                 });
@@ -335,12 +346,28 @@ namespace Bingora.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("name_normalized")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasColumnName("name_normalized")
+                        .HasComputedColumnSql("LOWER(TRANSLATE(\"name\", 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU'))", true);
+
                     b.HasKey("Id")
                         .HasName("pk_pattern");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("UQ_pattern_Name");
+
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("IX_pattern_owner_id");
+
+                    b.HasIndex("name_normalized")
+                        .HasDatabaseName("IX_pattern_name_normalized");
 
                     b.ToTable("pattern", "bingo");
                 });
@@ -474,6 +501,18 @@ namespace Bingora.Infrastructure.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("username");
 
+                    b.Property<string>("email_normalized")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasColumnName("email_normalized")
+                        .HasComputedColumnSql("LOWER(TRANSLATE(\"email\", 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU'))", true);
+
+                    b.Property<string>("username_normalized")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasColumnName("username_normalized")
+                        .HasComputedColumnSql("LOWER(TRANSLATE(\"username\", 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU'))", true);
+
                     b.HasKey("Id")
                         .HasName("pk_user");
 
@@ -484,6 +523,12 @@ namespace Bingora.Infrastructure.Migrations
                     b.HasIndex("Username")
                         .IsUnique()
                         .HasDatabaseName("UQ_user_username");
+
+                    b.HasIndex("email_normalized")
+                        .HasDatabaseName("IX_user_email_normalized");
+
+                    b.HasIndex("username_normalized")
+                        .HasDatabaseName("IX_user_username_normalized");
 
                     b.ToTable("user", "bingo");
                 });
@@ -664,6 +709,18 @@ namespace Bingora.Infrastructure.Migrations
                     b.Navigation("Pattern");
                 });
 
+            modelBuilder.Entity("Bingora.Domain.Entities.Pattern", b =>
+                {
+                    b.HasOne("Bingora.Domain.Entities.User", "Owner")
+                        .WithMany("CreatedPatterns")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pattern_users_owner_id");
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("Bingora.Domain.Entities.Player", b =>
                 {
                     b.HasOne("Bingora.Domain.Entities.Card", "Card")
@@ -762,6 +819,8 @@ namespace Bingora.Infrastructure.Migrations
             modelBuilder.Entity("Bingora.Domain.Entities.User", b =>
                 {
                     b.Navigation("CreatedBingos");
+
+                    b.Navigation("CreatedPatterns");
                 });
 #pragma warning restore 612, 618
         }

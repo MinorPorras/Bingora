@@ -6,12 +6,14 @@ public class Pattern
 {
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
+    public Guid OwnerId { get; private set; }
     public string GridRepresentation { get; private set; } = string.Empty;
     public int Bitmask { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public bool IsActive { get; private set; } = true;
 
     //Navegación
+    public User Owner { get; private set; }
     private readonly List<BingoPattern> _bingoPatterns = [];
     public IReadOnlyCollection<BingoPattern> BingoPatterns => _bingoPatterns.AsReadOnly();
 

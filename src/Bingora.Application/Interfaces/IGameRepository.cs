@@ -1,4 +1,5 @@
-﻿using Bingora.Domain.Entities;
+﻿using Bingora.Domain.Common;
+using Bingora.Domain.Entities;
 
 namespace Bingora.Application.Interfaces;
 
@@ -12,6 +13,10 @@ public interface IGameRepository
     Task<Player?> GetPlayerByIdAsync(Guid gameId, Guid playerId, CancellationToken ct = default);
     Task<Player?> GetPlayerWithGameAsync(Guid gameId, Guid playerId, CancellationToken ct = default);
     Task<Game?> GetByIdForManagementAsync(Guid gameId, CancellationToken ct = default);
+
+    public Task<PaginatedResult<Game>> GetPagedByTitleAsync(Guid ownerId, string searchTerm, int pageNumber,
+        int pageSize, CancellationToken ct = default);
+
     Task AddCardsAsync(Guid gameId, IEnumerable<Card> cards, CancellationToken ct = default);
     Task AddPlayerAsync(Player player, CancellationToken ct = default);
 }

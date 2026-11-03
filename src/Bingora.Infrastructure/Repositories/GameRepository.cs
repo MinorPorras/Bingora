@@ -1,6 +1,8 @@
 ﻿using Bingora.Application.Interfaces;
+using Bingora.Domain.Common;
 using Bingora.Domain.Entities;
 using Bingora.Infrastructure.Data;
+using Bingora.Infrastructure.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bingora.Infrastructure.Repositories;
@@ -49,6 +51,24 @@ public class GameRepository(AppDbContext context) : IGameRepository
             .Include(g => g.Cards)
             .Include(g => g.Bingo)
             .FirstOrDefaultAsync(g => g.Id == gameId, ct);
+
+    public async Task<PaginatedResult<Game>> GetPagedByTitleAsync(Guid ownerId, string searchTerm, int pageNumber,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var page = Math.Max(1, pageNumber);
+        var size = Math.Clamp(pageSize, 1, 100);
+
+        var query = context.Games.AsNoTracking()
+            .Where(w => w.Bingo.OwnerId == ownerId)
+            .Where(g => EF.Property<string>(g, "title_normalized").Contains(searchTerm.NormalizeSearchTerm()))
+            .OrderByDescending(g => g.CreatedAt);
+
+        var total = await query.CountAsync(ct);
+        var items = await query.Skip((page - 1) * size).Take(size).ToListAsync(ct);
+        return new PaginatedResult<Game>(items, page, total, size);
+    }
+
 
     public async Task AddCardsAsync(Guid gameId, IEnumerable<Card> cards, CancellationToken ct = default)
     {

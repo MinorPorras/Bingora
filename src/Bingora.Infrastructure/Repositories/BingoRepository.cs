@@ -3,6 +3,7 @@ using Bingora.Application.Interfaces;
 using Bingora.Domain.Common;
 using Bingora.Domain.Entities;
 using Bingora.Infrastructure.Data;
+using Bingora.Infrastructure.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bingora.Infrastructure.Repositories;
@@ -47,7 +48,7 @@ public class BingoRepository(AppDbContext context) : IBingoRepository
         await context.Bingos.IgnoreQueryFilters().Include(b => b.BingoPatterns).ThenInclude(bp => bp.Pattern)
             .FirstOrDefaultAsync(x => x.Id == id && x.OwnerId == ownerId, ct);
 
-    public async Task<PaginatedResult<Bingo>> GetPagedByNameAsync(Guid ownerId, string name, int pageNumber,
+    public async Task<PaginatedResult<Bingo>> GetPagedByNameOrDescriptionAsync(Guid ownerId, string name, int pageNumber,
         int pageSize,
         CancellationToken ct = default)
     {
@@ -55,7 +56,8 @@ public class BingoRepository(AppDbContext context) : IBingoRepository
         var size = Math.Clamp(pageSize, 1, 100);
 
         var query = context.Bingos.AsNoTracking()
-            .Where(b => b.Name.Contains(name) && b.OwnerId == ownerId)
+            .Where(b => b.OwnerId == ownerId)
+            .Where(b => EF.Property<string>(b, "name_normalized").Contains(name.NormalizeSearchTerm()))
             .OrderBy(x => x.CreatedAt);
 
         var total = await query.CountAsync(ct);

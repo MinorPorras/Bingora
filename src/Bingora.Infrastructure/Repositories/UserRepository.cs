@@ -2,6 +2,7 @@
 using Bingora.Domain.Common;
 using Bingora.Domain.Entities;
 using Bingora.Infrastructure.Data;
+using Bingora.Infrastructure.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bingora.Infrastructure.Repositories;
@@ -26,6 +27,22 @@ public class UserRepository(AppDbContext context) : IUserRepository
         var items = await query.Skip((page - 1) * size).Take(size).ToListAsync(ct);
 
         return new PaginatedResult<User>(items, total, page, size);
+    }
+
+    public async Task<PaginatedResult<User>> GetPagedByUsernameOrEmailAsync(int pageNumber, int pageSize,
+        string searchTerm,
+        CancellationToken ct = default)
+    {
+        var page = Math.Max(1, pageNumber);
+        var size = Math.Clamp(pageSize, 1, 100);
+        var query = context.Users.AsNoTracking()
+            .Where(u =>
+                EF.Property<string>(u, "username_normalized").Contains(searchTerm.NormalizeSearchTerm()) ||
+                EF.Property<string>(u, "email_normalized").Contains(searchTerm.NormalizeSearchTerm()))
+            .OrderBy(u => u.CreatedAt);
+        var total = await query.CountAsync(ct);
+        var items = await query.Skip((page - 1) * size).Take(size).ToListAsync(ct);
+        return new PaginatedResult<User>(items, page, total, size);
     }
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default(CancellationToken)) =>

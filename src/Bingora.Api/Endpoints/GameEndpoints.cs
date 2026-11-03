@@ -1,5 +1,6 @@
 ﻿using Bingora.Api.Extensions;
 using Bingora.Api.Helpers;
+using Bingora.Application.DTOs.Common;
 using Bingora.Application.DTOs.Game;
 using Bingora.Application.Interfaces;
 using Bingora.Application.Mappings;
@@ -34,6 +35,17 @@ public static class GameEndpoints
             .Produces<GameResponseDto>(200)
             .ProducesProblem(401)
             .ProducesProblem(404);
+
+        group.MapGet("/search/{title}",
+            async ([AsParameters] PaginatedQuery query, string title, [FromServices] IGameRepository repository,
+                HttpContext context, CancellationToken ct) =>
+            {
+                if (!context.User.TryGetUserId(out var userId))
+                    return ProblemResults.Unauthorized();
+                var pagedResult =
+                    await repository.GetPagedByTitleAsync(userId, title, query.PageNumber, query.PageSize, ct);
+                return Results.Ok(pagedResult.MapTo(g => g.ToResponseDto()));
+            });
 
         group.MapPost("/",
                 async ([FromBody] CreateOrUpdateGameRequestDto dto,

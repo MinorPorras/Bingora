@@ -56,7 +56,8 @@ public static class BingoEndpoints
                     CancellationToken ct) =>
                 {
                     if (!context.User.TryGetUserId(out var userId)) return ProblemResults.Unauthorized();
-                    var paged = await repository.GetPagedByNameAsync(userId, name, query.PageNumber, query.PageSize,
+                    var paged = await repository.GetPagedByNameOrDescriptionAsync(userId, name, query.PageNumber,
+                        query.PageSize,
                         ct);
                     return Results.Ok(paged.MapTo(b => b.ToSummaryDto()));
                 })
@@ -94,7 +95,6 @@ public static class BingoEndpoints
             .Produces<BingoSummaryDto>(200)
             .ProducesProblem(401)
             .ProducesProblem(404);
-        ;
 
         group.MapPost("/",
                 async ([FromBody] CreateOrUpdateBingoRequestDto dto,

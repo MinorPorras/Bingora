@@ -15,7 +15,7 @@ public interface IBingoRepository
     Task<Bingo?> GetByIdAsync(Guid id, Guid ownerId, CancellationToken ct = default);
     Task<Bingo?> GetByIdAsyncIgnoringFilters(Guid id, Guid ownerId, CancellationToken ct = default);
 
-    Task<PaginatedResult<Bingo>> GetPagedByNameAsync(Guid ownerId, string name, int pageNumber, int pageSize,
+    Task<PaginatedResult<Bingo>> GetPagedByNameOrDescriptionAsync(Guid ownerId, string name, int pageNumber, int pageSize,
         CancellationToken cancellationToken = default);
 
     Task AddAsync(Bingo bingo, CancellationToken ct = default);

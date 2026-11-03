@@ -2,6 +2,7 @@
 using Bingora.Domain.Common;
 using Bingora.Domain.Entities;
 using Bingora.Infrastructure.Data;
+using Bingora.Infrastructure.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bingora.Infrastructure.Repositories;
@@ -28,7 +29,8 @@ public class PatternRepository(AppDbContext context) : IPatternRepository
         return new PaginatedResult<Pattern>(items, page, total, size);
     }
 
-    public async Task<PaginatedResult<Pattern>> GetByNamePagedAsync(int pageNumber, int pageSize, string patternName,
+    public async Task<PaginatedResult<Pattern>> GetByNamePagedAsync(Guid ownerId, int pageNumber, int pageSize,
+        string patternName,
         CancellationToken ct = default)
     {
         var page = Math.Max(1, pageNumber);
@@ -36,7 +38,8 @@ public class PatternRepository(AppDbContext context) : IPatternRepository
 
         var query = context.Patterns
             .AsNoTracking()
-            .Where(p => p.Name.Contains(patternName))
+            .Where(p => p.OwnerId == ownerId)
+            .Where(p => EF.Property<string>(p, "name_normalized").Contains(patternName.NormalizeSearchTerm()))
             .OrderBy(p => p.Name);
 
         var total = await query.CountAsync(ct);

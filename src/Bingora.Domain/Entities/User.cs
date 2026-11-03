@@ -13,6 +13,8 @@ public class User
     public Role Role { get; private set; } = Role.User;
 
     //Navegación
+    public IReadOnlyCollection<Pattern> CreatedPatterns => _createdPatterns.AsReadOnly();
+    private readonly List<Pattern> _createdPatterns = [];
     public IReadOnlyCollection<Bingo> CreatedBingos => _createdBingos.AsReadOnly();
     private List<Bingo> _createdBingos = [];
 

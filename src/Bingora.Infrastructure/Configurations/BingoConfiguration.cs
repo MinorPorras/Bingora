@@ -12,7 +12,9 @@ public class BingoConfiguration : IEntityTypeConfiguration<Bingo>
         entity.HasKey(r => r.Id);
 
         entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
-        entity.HasIndex(e => e.Name).HasDatabaseName("IX_bingo_name");
+        entity.Property<string>("name_normalized")
+            .HasComputedColumnSql("LOWER(TRANSLATE(\"name\", 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU'))", stored: true);
+        entity.HasIndex("name_normalized").HasDatabaseName("IX_bingo_name_normalized");
 
         entity.Property(e => e.Description).HasMaxLength(500);
 

@@ -1,4 +1,5 @@
-﻿using Bingora.Api.Helpers;
+﻿using Bingora.Api.Extensions;
+using Bingora.Api.Helpers;
 using Bingora.Application.DTOs.Common;
 using Bingora.Application.DTOs.Pattern;
 using Bingora.Application.Interfaces;
@@ -38,7 +39,10 @@ public static class PatternEndpoints
                     [FromServices] IPatternRepository repository,
                     CancellationToken ct) =>
                 {
-                    var paged = await repository.GetByNamePagedAsync(query.PageNumber, query.PageSize, name, ct);
+                    if (!context.User.TryGetUserId(out var userId))
+                        return ProblemResults.Unauthorized();
+                    var paged = await repository.GetByNamePagedAsync(userId, query.PageNumber, query.PageSize, name,
+                        ct);
                     return Results.Ok(paged.MapTo(u => u.ToResponseDto()));
                 })
             .WithSummary("Obtener patrones por nombre")
