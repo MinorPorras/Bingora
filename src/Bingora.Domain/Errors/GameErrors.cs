@@ -20,5 +20,8 @@ public static class GameErrors
         new("Game.Finished", "No se puede unir a una partida que ya ha finalizado.");
 
     public static readonly Error NoCardsAvailable =
-        new("Game.NoCards", "No hay cartones disponibles para asignar. El juego está lleno.");
+        new("Game.NotEnoughCards", "No hay cartones disponibles para asignar. El juego está lleno.");
+
+    public static readonly Error NoCards =
+        new("Game.NoCards", "La partida no tiene cartones para regenerar.");
 }

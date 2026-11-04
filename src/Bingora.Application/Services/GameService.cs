@@ -67,6 +67,18 @@ public class GameService(IBingoRepository bingoRepository, IGameRepository gameR
         return Result<GeneratedCardsResponseDto>.Success(new GeneratedCardsResponseDto(quantity, cardsWithQr));
     }
 
+    public async Task<Result<int>> RegenerateQrAsync(Guid gameId, Guid ownerId, CancellationToken ct = default)
+    {
+        var game = await gameRepository.GetByIdAsync(gameId, ownerId, ct);
+        if (game is null)
+            return Result<int>.Failure(GameErrors.NotFound);
+        var cardCodes = game.Cards.Select(c => c.Code).ToList();
+        if (cardCodes.Count == 0)
+            return Result<int>.Failure(GameErrors.NoCards);
+        await qrCodeService.RegenerateGameQrAsync(game.Id, game.GameCode, cardCodes);
+        return Result<int>.Success(cardCodes.Count);
+    }
+
     public async Task<Result<JoinGameResponseDto>> JoinGameAsync(JoinGameRequestDto dto, CancellationToken ct = default)
     {
         var game = await gameRepository.GetByCodeAsync(dto.GameCode, ct);

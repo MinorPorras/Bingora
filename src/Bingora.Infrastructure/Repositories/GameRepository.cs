@@ -47,9 +47,6 @@ public class GameRepository(AppDbContext context) : IGameRepository
         await context.Players.Include(p => p.Card)
             .FirstOrDefaultAsync(p => p.Id == playerId && p.Game.Bingo.OwnerId == ownerId && p.GameId == gameId, ct);
 
-    public async Task<Player?> GetPlayerWithGameAsync(Guid gameId, Guid playerId, CancellationToken ct = default) =>
-        await context.Players.Include(p => p.Game).FirstOrDefaultAsync(p => p.Id == playerId && p.GameId == gameId, ct);
-
     public async Task<Game?> GetByIdForManagementAsync(Guid gameId, CancellationToken ct = default) =>
         await context.Games.Include(g => g.Players)
             .ThenInclude(p => p.Card)

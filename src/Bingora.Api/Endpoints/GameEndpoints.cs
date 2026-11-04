@@ -139,6 +139,32 @@ public static class GameEndpoints
             .ProducesProblem(401)
             .ProducesProblem(404);
 
+        group.MapPost("/{id:guid}/cards/regenerate-qr",
+                async (Guid id, [FromServices] IGameService service, HttpContext context, CancellationToken ct) =>
+                {
+                    if (!context.User.TryGetUserId(out var userId))
+                        return ProblemResults.Unauthorized();
+                    var response = await service.RegenerateQrAsync(id, userId, ct);
+                    if (response.IsFailure)
+                    {
+                        return response.Error?.Code == "Game.NotFound"
+                            ? ProblemResults.NotFound(response.Error.Message)
+                            : ProblemResults.BadRequest(response.Error.Message);
+                    }
+
+                    return Results.Ok(new RegenerateQRsResponseDto(
+                        $"Se regeneraron {response.Value} códigos QR exitosamente.",
+                        response.Value
+                    ));
+                })
+            .WithSummary("Regenerar código QR de los cartones")
+            .WithDescription(
+                "Vuelve a generar las imágenes de todos los códigos QR para todos los cartones de un juego.")
+            .Produces<RegenerateQRsResponseDto>(200)
+            .ProducesProblem(400)
+            .ProducesProblem(401)
+            .ProducesProblem(404);
+
         group.MapPut("/{id:guid}",
                 async (Guid id, [FromBody] CreateOrUpdateGameRequestDto dto,
                     [FromServices] IValidator<CreateOrUpdateGameRequestDto> validator,

@@ -12,7 +12,6 @@ public interface IGameRepository
     Task<Game?> GetByIdAsync(Guid id, Guid ownerId, CancellationToken ct = default);
     Task<Game?> GetByCodeAsync(string code, CancellationToken ct = default);
     Task<Player?> GetPlayerByIdAsync(Guid gameId, Guid playerId, Guid ownerId, CancellationToken ct = default);
-    Task<Player?> GetPlayerWithGameAsync(Guid gameId, Guid playerId, CancellationToken ct = default);
     Task<Game?> GetByIdForManagementAsync(Guid gameId, CancellationToken ct = default);
 
     public Task<PaginatedResult<Game>> GetPagedByTitleAsync(Guid ownerId, string searchTerm, int pageNumber,

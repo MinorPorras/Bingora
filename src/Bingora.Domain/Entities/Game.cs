@@ -181,11 +181,10 @@ public class Game
     }
 
     // Helper
-    public bool VerifyJoinPassword(string? inputPassword)
-    {
-        if (string.IsNullOrWhiteSpace(AccessPassword)) return true;
-        return AccessPassword.Equals(inputPassword?.Trim(), StringComparison.OrdinalIgnoreCase);
-    }
+    public bool VerifyJoinPassword(string? inputPassword) =>
+        string.IsNullOrWhiteSpace(AccessPassword) ||
+        AccessPassword.Equals(inputPassword?.Trim(), StringComparison.OrdinalIgnoreCase);
+
 
     private static string GenerateUniqueCardCode()
     {

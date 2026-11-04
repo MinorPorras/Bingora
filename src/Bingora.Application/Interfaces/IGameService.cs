@@ -39,6 +39,15 @@ public interface IGameService
         CancellationToken ct = default);
 
     /// <summary>
+    /// Regenera el QR de todos los cartones de una partida específico
+    /// </summary>
+    /// <param name="gameId">ID de la partida</param>
+    /// <param name="ownerId">ID del creador de la partida</param>
+    /// <param name="ct">Token de cancelación</param>
+    /// <returns>Número de cartones actualizados</returns>
+    Task<Result<int>> RegenerateQrAsync(Guid gameId, Guid ownerId, CancellationToken ct = default);
+
+    /// <summary>
     /// Permite que un nuevo jugador se pueda contectar a una partida por medio del código de esta
     /// </summary>
     /// <param name="dto">Data Transfer Object con los datos necesarios</param>
